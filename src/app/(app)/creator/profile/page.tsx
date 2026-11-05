@@ -18,7 +18,7 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
     <>
       <Flash sp={sp} />
       <PageHeader title="Profile & portfolio" description="You control what brands see. Numbers you add yourself are labelled as creator-reported." actions={<Link href={`/creators/${p.id}`} className="text-sm font-medium text-accent">Preview public profile →</Link>} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
         <Card>
           <CardHeader title="Profile" actions={<StatusChip status={p.verificationState} label={p.verificationState === "verified" ? "ID verified" : undefined} />} />
           <CardBody>
@@ -34,7 +34,7 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
                 <legend className="mb-2 text-sm font-medium text-ink-2">Niches (first is primary)</legend>
                 <div className="flex flex-wrap gap-2">
                   {NICHES.map((n) => (
-                    <label key={n} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                    <label key={n} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                       <input type="checkbox" name="niches" value={n} defaultChecked={p.niches.includes(n)} /> {n}
                     </label>
                   ))}
@@ -53,12 +53,12 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
           </CardBody>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Card>
             <CardHeader title="Connected accounts" description="Official OAuth connections arrive after platform app review. Until then, add evidence manually." />
             <ul className="divide-y divide-line-2">
               {accounts.map((a) => (
-                <li key={a.id} className="px-5 py-3 text-sm">
+                <li key={a.id} className="px-6 py-4 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <div><div className="font-medium">{a.platform} · @{a.handle}</div><div className="text-xs text-muted">{a.connectionState === "connected_api" ? `API connected · scopes: ${a.scopes.join(", ")}` : a.connectionState === "manual_evidence" ? "Manual evidence" : "Disconnected — data marked stale"}</div></div>
                     {a.connectionState !== "disconnected" && (
@@ -78,8 +78,8 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
               ))}
             </ul>
             <details className="border-t border-line-2">
-              <summary className="px-5 py-3 text-sm font-medium text-accent">+ Add account with evidence</summary>
-              <form action={addAccountAction} className="space-y-3 px-5 pb-5">
+              <summary className="px-6 py-4 text-sm font-medium text-accent">+ Add account with evidence</summary>
+              <form action={addAccountAction} className="space-y-3 px-6 pb-6">
                 <input type="hidden" name="back" value={back} />
                 <div className="grid grid-cols-2 gap-3">
                   <select name="platform" aria-label="Platform" className={inputClass}>{CHANNELS.map((c) => <option key={c}>{c}</option>)}</select>
@@ -96,13 +96,13 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
             <CardHeader title="Portfolio" />
             <ul className="divide-y divide-line-2">
               {portfolio.map((it) => (
-                <li key={it.id} className="px-5 py-3 text-sm"><a href={it.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:text-accent">{it.title} ↗</a><div className="text-xs text-muted">{it.platform}{it.brandName ? ` · ${it.brandName}` : ""}{it.resultSummary ? ` · ${it.resultSummary}` : ""}</div></li>
+                <li key={it.id} className="px-6 py-4 text-sm"><a href={it.url} target="_blank" rel="noopener noreferrer" className="font-medium hover:text-accent">{it.title} ↗</a><div className="text-xs text-muted">{it.platform}{it.brandName ? ` · ${it.brandName}` : ""}{it.resultSummary ? ` · ${it.resultSummary}` : ""}</div></li>
               ))}
-              {portfolio.length === 0 && <li className="px-5 py-4 text-sm text-muted">Add your best work so brands can judge fit.</li>}
+              {portfolio.length === 0 && <li className="px-6 py-5 text-sm text-muted">Add your best work so brands can judge fit.</li>}
             </ul>
             <details className="border-t border-line-2">
-              <summary className="px-5 py-3 text-sm font-medium text-accent">+ Add work</summary>
-              <form action={addPortfolioAction} className="space-y-3 px-5 pb-5">
+              <summary className="px-6 py-4 text-sm font-medium text-accent">+ Add work</summary>
+              <form action={addPortfolioAction} className="space-y-3 px-6 pb-6">
                 <input type="hidden" name="back" value={back} />
                 <input name="title" aria-label="Title" placeholder="Title" className={inputClass} />
                 <input name="url" aria-label="Link" placeholder="https://" className={inputClass} />

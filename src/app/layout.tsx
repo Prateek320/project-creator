@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Project Creator", template: "%s · Project Creator" },
+  title: { default: "proovd · Proof you can see. Performance you get paid for.", template: "%s · proovd" },
   description: "The operating system for creator–brand partnerships: clear terms, verified outcomes, dependable payouts.",
 };
 export const viewport: Viewport = { themeColor: "#f6f7f9", width: "device-width", initialScale: 1 };

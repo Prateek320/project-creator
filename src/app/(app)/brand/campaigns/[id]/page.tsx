@@ -32,8 +32,8 @@ export default async function CampaignOverview({ params, searchParams }: { param
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="min-w-0 space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+        <div className="min-w-0 space-y-8">
           <Card>
             <CardHeader title="Brief" description={`${c.objective} · ${c.niche} · ${c.channels.join(", ")}`} />
             <CardBody><p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{c.brief}</p></CardBody>
@@ -42,7 +42,7 @@ export default async function CampaignOverview({ params, searchParams }: { param
             <CardHeader title="Deliverables per creator" description="Due dates count from the campaign start." />
             <ul className="divide-y divide-line-2">
               {reqs.map((r) => (
-                <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 px-5 py-3 text-sm">
+                <li key={r.id} className="flex flex-wrap items-start justify-between gap-2 px-6 py-4 text-sm">
                   <div>
                     <div className="font-medium">{r.quantity} × {r.deliverableType} <span className="font-normal text-muted">on {r.channel}</span></div>
                     {r.acceptanceCriteria && <div className="text-xs text-muted">{r.acceptanceCriteria}</div>}
@@ -72,12 +72,12 @@ export default async function CampaignOverview({ params, searchParams }: { param
           <Card>
             <CardHeader title="Creators on this campaign" actions={<Link href={`${back}/applications`} className="text-sm font-medium text-accent">Applications →</Link>} />
             {collabs.length === 0 ? (
-              <p className="px-5 py-6 text-sm text-muted">No offers yet. Shortlist applicants and send an offer to get started.</p>
+              <p className="px-6 py-8 text-sm text-muted">No offers yet. Shortlist applicants and send an offer to get started.</p>
             ) : (
               <ul className="divide-y divide-line-2">
                 {collabs.map(({ agreement, creator, status }) => (
                   <li key={agreement.id}>
-                    <Link href={`/collaborations/${agreement.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50">
+                    <Link href={`/collaborations/${agreement.id}`} className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-white/60">
                       <Avatar name={creator.displayName} color={creator.accent} size={32} />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium">{creator.displayName}</div>
@@ -92,7 +92,7 @@ export default async function CampaignOverview({ params, searchParams }: { param
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Card>
             <CardHeader title="Budget" actions={c.status !== "draft" ? <StatusChip status={c.fundingState} /> : undefined} />
             <CardBody className="space-y-3 text-sm">
@@ -109,7 +109,7 @@ export default async function CampaignOverview({ params, searchParams }: { param
                   <input type="hidden" name="campaignId" value={c.id} />
                   <input type="hidden" name="back" value={back} />
                   <SubmitButton className="w-full" pendingLabel="Funding…">Fund campaign (test payment)</SubmitButton>
-                  <p className="mt-2 text-xs text-muted">Funds are collected by the payment provider, not held by Project Creator. Mock provider in this build.</p>
+                  <p className="mt-2 text-xs text-muted">Funds are collected by the payment provider, not held by proovd. Mock provider in this build.</p>
                 </form>
               )}
               {(c.status === "completed" || c.status === "cancelled") && b.campaign_funds > 0 && (

@@ -69,7 +69,7 @@ export function CampaignBuilder() {
   const budgetMinor = Math.round((Number(budget.replace(/,/g, "")) || 0) * 100);
 
   return (
-    <form ref={form} action={createCampaignAction} noValidate onInput={save} onSubmit={() => { try { localStorage.removeItem(KEY); } catch { /* ignore */ } }} className="grid gap-6 lg:grid-cols-[220px_1fr]">
+    <form ref={form} action={createCampaignAction} noValidate onInput={save} onSubmit={() => { try { localStorage.removeItem(KEY); } catch { /* ignore */ } }} className="grid gap-8 lg:grid-cols-[220px_1fr]">
       <input type="hidden" name="back" value="/brand/campaigns/new" />
       <nav aria-label="Campaign builder steps" className="lg:sticky lg:top-20 lg:self-start">
         <ol className="flex gap-2 overflow-x-auto lg:flex-col">
@@ -77,7 +77,7 @@ export function CampaignBuilder() {
             <li key={s}>
               <button type="button" onClick={() => setStep(i)} aria-current={step === i ? "step" : undefined}
                 className={cx("flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm", step === i ? "bg-white font-medium text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink")}>
-                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-slate-200 text-slate-600")}>{i < step ? "✓" : i + 1}</span>
+                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-[#e3e7ef] text-slate-600")}>{i < step ? "✓" : i + 1}</span>
                 {s}
               </button>
             </li>
@@ -86,7 +86,7 @@ export function CampaignBuilder() {
         <p className="mt-3 hidden px-3 text-xs text-muted lg:block">{savedAt ? `Autosaved in this browser at ${savedAt}` : restored ? "Restored your unsaved draft" : "Changes autosave in this browser"}</p>
       </nav>
 
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-8">
         {/* Step 1 */}
         <Card className={cx("p-5 sm:p-6", step !== 0 && "hidden")}>
           <h2 className="text-lg font-semibold">The brief</h2>
@@ -112,7 +112,7 @@ export function CampaignBuilder() {
               <legend className="mb-2 text-sm font-medium text-ink-2">Channels</legend>
               <div className="flex flex-wrap gap-2">
                 {CHANNELS.map((c) => (
-                  <label key={c} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                  <label key={c} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                     <input type="checkbox" name="channels" value={c} defaultChecked={c === "Instagram"} /> {c}
                   </label>
                 ))}
@@ -134,7 +134,7 @@ export function CampaignBuilder() {
             <legend className="mb-2 text-sm font-medium text-ink-2">Content languages</legend>
             <div className="flex flex-wrap gap-2">
               {LANGS.map((l) => (
-                <label key={l} className="inline-flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                <label key={l} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                   <input type="checkbox" name="languages" value={l} defaultChecked={l === "English" || l === "Hindi"} /> {l}
                 </label>
               ))}
@@ -143,7 +143,7 @@ export function CampaignBuilder() {
           <h3 className="mb-2 mt-6 text-sm font-semibold">Deliverables per creator</h3>
           <div className="space-y-3">
             {reqs.map((r, i) => (
-              <div key={i} className="grid gap-2 rounded-xl border border-line p-3 sm:grid-cols-[1fr_1fr_80px_100px_auto]">
+              <div key={i} className="grid gap-2 rounded-2xl border border-line p-3 sm:grid-cols-[1fr_1fr_80px_100px_auto]">
                 <input aria-label="Deliverable type" name="req_type" value={r.type} onChange={(e) => setReqs(reqs.map((x, j) => (j === i ? { ...x, type: e.target.value } : x)))} className={inputClass} placeholder="Reel" />
                 <select aria-label="Channel" name="req_channel" value={r.channel} onChange={(e) => setReqs(reqs.map((x, j) => (j === i ? { ...x, channel: e.target.value } : x)))} className={inputClass}>{CHANNELS.map((c) => <option key={c}>{c}</option>)}</select>
                 <input aria-label="Quantity" name="req_qty" inputMode="numeric" value={r.qty} onChange={(e) => setReqs(reqs.map((x, j) => (j === i ? { ...x, qty: Number(e.target.value) || 0 } : x)))} className={inputClass} />
@@ -193,7 +193,7 @@ export function CampaignBuilder() {
             <Field label="Apply by" htmlFor="applyBy"><input id="applyBy" name="applyBy" type="date" defaultValue={iso(5)} className={inputClass} /></Field>
             <Field label="Visibility" htmlFor="visibility"><select id="visibility" name="visibility" className={inputClass}><option value="public">Public listing</option><option value="private">Invite only</option></select></Field>
           </div>
-          <div className="mt-6"><Notice tone="info">Publishing checks that every material term is filled and that the budget covers the worst-case payout for all slots.</Notice></div>
+          <div className="mt-8"><Notice tone="info">Publishing checks that every material term is filled and that the budget covers the worst-case payout for all slots.</Notice></div>
         </Card>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -201,7 +201,7 @@ export function CampaignBuilder() {
           <div className="flex flex-wrap gap-2">
             <SubmitButton name="intent" value="draft" variant="secondary" pendingLabel="Saving…">Save draft</SubmitButton>
             {step < STEPS.length - 1 ? (
-              <button type="button" onClick={() => setStep(step + 1)} className="inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-medium text-white hover:bg-accent-600">Continue</button>
+              <button type="button" onClick={() => setStep(step + 1)} className="inline-flex h-10 items-center rounded-full bg-ink px-4 text-sm font-medium text-white hover:bg-accent-600">Continue</button>
             ) : (
               <SubmitButton name="intent" value="publish" pendingLabel="Publishing…">Publish campaign</SubmitButton>
             )}

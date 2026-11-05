@@ -133,7 +133,7 @@ export async function recordClick(db: Executor, slug: string, visitorFingerprint
     })
     .onConflictDoNothing({ target: attributionEvents.eventId });
   const url = new URL(row.campaign.landingUrl);
-  url.searchParams.set("utm_source", "projectcreator");
+  url.searchParams.set("utm_source", "proovd");
   url.searchParams.set("utm_campaign", slug);
   url.searchParams.set("pc_campaign", row.campaign.id);
   url.searchParams.set("pc_creator", row.agreement.creatorProfileId);

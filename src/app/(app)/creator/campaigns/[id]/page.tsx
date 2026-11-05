@@ -34,8 +34,8 @@ export default async function CampaignBrief({ params, searchParams }: { params: 
         description={<span className="inline-flex items-center gap-2"><Avatar name={brand.displayName} color="#0f172a" size={20} />{brand.displayName} · {brand.category}{brand.verificationState === "verified" ? " · verified business" : ""}</span>}
       />
       <Flash sp={sp} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div className="min-w-0 space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        <div className="min-w-0 space-y-8">
           <Card>
             <CardHeader title="The brief" />
             <CardBody><p className="whitespace-pre-line text-[15px] leading-relaxed text-ink-2">{c.brief}</p></CardBody>
@@ -44,13 +44,13 @@ export default async function CampaignBrief({ params, searchParams }: { params: 
             <CardHeader title="What you'd deliver" description={`Campaign runs ${fmtDate(c.startAt)} – ${fmtDate(c.endAt, { day: "numeric", month: "short", year: "numeric" })}`} />
             <ul className="divide-y divide-line-2">
               {reqs.map((r) => (
-                <li key={r.id} className="px-5 py-3 text-sm">
+                <li key={r.id} className="px-6 py-4 text-sm">
                   <div className="flex justify-between gap-3"><span className="font-medium">{r.quantity} × {r.deliverableType} on {r.channel}</span><span className="text-muted">due {fmtDate(new Date(c.startAt.getTime() + r.dueOffsetDays * 86_400_000))}</span></div>
                   {r.acceptanceCriteria && <div className="mt-0.5 text-xs text-muted">Accepted when: {r.acceptanceCriteria}</div>}
                 </li>
               ))}
             </ul>
-            <p className="border-t border-line-2 px-5 py-3 text-xs text-muted">Includes up to 2 revision rounds per deliverable. Further changes need an amendment you accept.</p>
+            <p className="border-t border-line-2 px-6 py-4 text-xs text-muted">Includes up to 2 revision rounds per deliverable. Further changes need an amendment you accept.</p>
           </Card>
           <Card>
             <CardHeader title="Terms you'd be agreeing to" />
@@ -72,7 +72,7 @@ export default async function CampaignBrief({ params, searchParams }: { params: 
           )}
         </div>
 
-        <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
+        <div className="space-y-8 lg:sticky lg:top-20 lg:self-start">
           <Card>
             <CardHeader title="Payout" description={describeFormula(f)} />
             <CardBody><EarningsPreview formula={f} target={c.measurement.target} title="Estimate your earnings" /></CardBody>

@@ -25,15 +25,15 @@ export default async function Settlement({ params, searchParams }: { params: Pro
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Earned under the agreement" value={formatINR(r.totalMinor)} hint={`Agreement v${c.active?.version ?? c.root.version}`} />
         <Stat label="Approved by brand" value={formatINR(s.settledToDate)} hint={s.pendingApprovalMinor > 0 ? `${formatINR(s.pendingApprovalMinor)} awaiting approval` : "Up to date"} tone={s.pendingApprovalMinor > 0 ? "warn" : "good"} />
         <Stat label="Paid out" value={formatINR(s.balances.creator_paid)} hint={`${formatINR(s.balances.creator_payable)} ready for payout`} />
         <Stat label="Held for dispute" value={formatINR(s.balances.dispute_hold)} hint={s.openDispute ? "Undisputed portion still payable" : "Nothing held"} tone={s.balances.dispute_hold ? "warn" : undefined} />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="min-w-0 space-y-6">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="min-w-0 space-y-8">
           <Card>
             <CardHeader title="How this was calculated" description={describeFormula(f)} />
             <CardBody>
@@ -59,18 +59,18 @@ export default async function Settlement({ params, searchParams }: { params: Pro
             <CardHeader title="Evidence" description={`${outcomeEvents.length} outcome events received · ${clicks.toLocaleString("en-IN")} tracked clicks`} />
             <div className="max-h-[420px] overflow-auto">
               <table className="w-full min-w-[560px] text-sm">
-                <thead className="sticky top-0 bg-white"><tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted"><th className="px-5 py-2 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-5 py-2 font-medium">Counted?</th></tr></thead>
+                <thead className="sticky top-0 bg-white/90 backdrop-blur"><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-6 py-2.5 font-medium">Counted?</th></tr></thead>
                 <tbody className="divide-y divide-line-2">
                   {outcomeEvents.slice(0, 200).map((e) => (
                     <tr key={e.id}>
-                      <td className="px-5 py-2 font-mono text-xs">{e.eventId}</td>
+                      <td className="px-6 py-2.5 font-mono text-xs">{e.eventId}</td>
                       <td className="px-3 py-2">{e.eventType}</td>
                       <td className="px-3 py-2 text-xs text-muted">{fmtDateTime(e.occurredAt)}</td>
                       <td className="px-3 py-2 text-xs text-muted">{e.source.replace(/_/g, " ")}</td>
-                      <td className="px-5 py-2"><StatusChip status={e.validityState} />{e.reasonCode && <span className="ml-2 text-xs text-muted">{e.reasonCode.replace(/_/g, " ")}</span>}</td>
+                      <td className="px-6 py-2.5"><StatusChip status={e.validityState} />{e.reasonCode && <span className="ml-2 text-xs text-muted">{e.reasonCode.replace(/_/g, " ")}</span>}</td>
                     </tr>
                   ))}
-                  {outcomeEvents.length === 0 && <tr><td colSpan={5} className="px-5 py-6 text-center text-muted">No outcome events yet.</td></tr>}
+                  {outcomeEvents.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">No outcome events yet.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -78,17 +78,17 @@ export default async function Settlement({ params, searchParams }: { params: Pro
 
           <Card>
             <CardHeader title="Ledger" description="Append-only. Every transaction balances to zero." />
-            {s.entries.length === 0 ? <p className="px-5 py-6 text-sm text-muted">No entries yet.</p> : (
+            {s.entries.length === 0 ? <p className="px-6 py-8 text-sm text-muted">No entries yet.</p> : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
-                  <thead><tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted"><th className="px-5 py-2 font-medium">When</th><th className="px-3 py-2 font-medium">Account</th><th className="px-3 py-2 font-medium">Memo</th><th className="px-5 py-2 text-right font-medium">Amount</th></tr></thead>
+                  <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">When</th><th className="px-3 py-2 font-medium">Account</th><th className="px-3 py-2 font-medium">Memo</th><th className="px-6 py-2.5 text-right font-medium">Amount</th></tr></thead>
                   <tbody className="divide-y divide-line-2">
                     {[...s.entries].reverse().map((e) => (
                       <tr key={e.id}>
-                        <td className="whitespace-nowrap px-5 py-2 text-xs text-muted">{fmtDateTime(e.createdAt)}</td>
+                        <td className="whitespace-nowrap px-6 py-2.5 text-xs text-muted">{fmtDateTime(e.createdAt)}</td>
                         <td className="px-3 py-2">{ACCOUNTS[e.account as keyof typeof ACCOUNTS] ?? e.account}</td>
                         <td className="max-w-[280px] px-3 py-2 text-xs text-muted">{e.memo}</td>
-                        <td className={`tnum px-5 py-2 text-right ${e.amountMinor < 0 ? "text-bad" : "text-good"}`}>{e.amountMinor > 0 ? "+" : "−"}{formatINR(Math.abs(e.amountMinor))}</td>
+                        <td className={`tnum whitespace-nowrap px-6 py-2.5 text-right ${e.amountMinor < 0 ? "text-bad" : "text-good"}`}>{e.amountMinor > 0 ? "+" : "−"}{formatINR(Math.abs(e.amountMinor))}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -98,7 +98,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-8">
           {isBrand && (
             <Card>
               <CardHeader title="Actions" />
@@ -138,7 +138,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
               <CardHeader title="Payouts" />
               <ul className="divide-y divide-line-2">
                 {s.transfers.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between px-5 py-3 text-sm">
+                  <li key={t.id} className="flex items-center justify-between px-6 py-4 text-sm">
                     <div><Money minor={t.amountMinor} className="font-medium" /><div className="font-mono text-[11px] text-muted">{t.providerRef}</div></div>
                     <StatusChip status={t.state} />
                   </li>
@@ -155,7 +155,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                   <div className="flex items-center justify-between"><span className="font-medium capitalize">{d.category.replace(/_/g, " ")}</span><StatusChip status={d.state} /></div>
                   <p className="mt-1 text-muted">{d.description}</p>
                   <div className="mt-1 text-xs text-muted">Hold requested: {formatINR(d.amountHeldMinor)} · opened {fmtDateTime(d.createdAt)}</div>
-                  {d.resolution && <p className="mt-2 rounded bg-slate-50 px-2 py-1 text-xs">Resolution ({d.resolution.outcome}) by {d.resolution.by}: {d.resolution.reason}</p>}
+                  {d.resolution && <p className="mt-2 rounded bg-sunken px-2 py-1 text-xs">Resolution ({d.resolution.outcome}) by {d.resolution.by}: {d.resolution.reason}</p>}
                 </div>
               ))}
               {s.disputes.length === 0 && <p className="text-muted">No disputes.</p>}

@@ -1,110 +1,127 @@
 import Link from "next/link";
+import { ScrollText, ShieldCheck } from "lucide-react";
 import { getDb } from "@/db";
-import { eventValidityAction, resetDemo, verificationAction } from "@/app/actions";
-import { SubmitButton } from "@/components/client";
-import { Avatar, Card, CardHeader, Flash, Money, PageHeader, Stat, StatusChip, fmtDateTime, inputClass, relDays } from "@/components/ui";
-import { adminQueue } from "@/server/admin";
+import { formatINR } from "@/domain/money";
+import { Flash } from "@/components/ui";
+import { DashHeader, SideCard } from "@/components/dashboard/blocks";
+import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
+import { FilteredList } from "@/components/dashboard/list";
+import { cx, glassRow, limePill } from "@/components/dashboard/styles";
+import { greetingFor, pickView } from "@/components/dashboard/types";
+import { adminHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
 
-export const metadata = { title: "Trust & safety" };
+export const metadata = { title: "Operations" };
 
-export default async function AdminQueue({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("admin");
   const sp = await searchParams;
-  const q = await adminQueue(await getDb(), actor);
+  const d = await adminHomeData(await getDb(), actor);
+  const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const c = d.counts;
+
+  const fallback = c.disputes > 0 ? "disputes" : c.verify > 0 ? "verify" : c.events > 0 ? "events" : "payments";
+  const views: ViewDef[] = [
+    { id: "disputes", label: "Open disputes", icon: "scale", tint: "bg-rose-100 text-rose-700", value: String(c.disputes), caption: c.disputes ? "Only the disputed amount is held" : "None open" },
+    { id: "events", label: "Excluded events", icon: "filter", tint: "bg-amber-100 text-amber-700", value: String(c.events), caption: "Invalid or out of window" },
+    { id: "verify", label: "Verification", icon: "shield", tint: "bg-emerald-100 text-emerald-700", value: String(c.verify), caption: "Creators and businesses" },
+    { id: "payments", label: "Payouts", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(c.paidMinor), caption: c.failed ? `${c.failed} failed transfer${c.failed > 1 ? "s" : ""}` : "No payment exceptions" },
+  ];
+  const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
+  const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
+
+  const panels = {
+    disputes: (
+      <FilteredList
+        title="Disputes"
+        question="Open disputes oldest first. Each resolution needs a written reason."
+        chips={[{ id: "all", label: "All" }, { id: "open", label: "Open" }, { id: "resolved", label: "Resolved" }]}
+        rows={of("disputes")}
+        initialChip={chipFor("disputes")}
+        emptyTitle="No disputes"
+        emptyBody="When a brand or creator raises one, it lands here."
+      />
+    ),
+    events: (
+      <FilteredList
+        title="Excluded attribution events"
+        question="Outcomes that didn't count toward a payout, and why."
+        chips={[{ id: "all", label: "All" }, { id: "manual", label: "Marked invalid" }, { id: "window", label: "Outside window" }]}
+        rows={of("events")}
+        initialChip={chipFor("events")}
+        emptyTitle="Nothing excluded"
+        emptyBody="Duplicate, test and out-of-window events show up here for review."
+        action={<Link href="/admin/queue#events" className="text-sm font-semibold text-ink-2 hover:text-ink">Restore in queue →</Link>}
+      />
+    ),
+    verify: (
+      <FilteredList
+        title="Verification requests"
+        question="Creator identity and business KYB waiting for a human decision."
+        chips={[{ id: "all", label: "All" }, { id: "creators", label: "Creators" }, { id: "businesses", label: "Businesses" }]}
+        rows={of("verify")}
+        initialChip={chipFor("verify")}
+        emptyTitle="Queue is clear"
+        emptyBody="New verification requests appear here."
+      />
+    ),
+    payments: (
+      <FilteredList
+        title="Payouts"
+        question="Every provider transfer, with failures first to fix."
+        chips={[{ id: "all", label: "All" }, { id: "failed", label: "Failed" }, { id: "paid", label: "Paid" }, { id: "other", label: "In flight" }]}
+        rows={of("payments")}
+        initialChip={chipFor("payments")}
+        emptyTitle="No transfers yet"
+        emptyBody="Payouts appear here once a brand pays a settlement."
+      />
+    ),
+  };
+
   return (
     <>
-      <Flash sp={sp} />
-      <PageHeader title="Trust & safety queue" description="Human review for anything uncertain. Every override records an actor and a reason." />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Open disputes" value={q.openDisputes.length} tone={q.openDisputes.length ? "warn" : undefined} hint="Oldest first" />
-        <Stat label="Excluded events" value={q.invalidEvents.length} hint="Invalid or out of window" />
-        <Stat label="Payment exceptions" value={q.failedTransfers.length} hint="Failed provider transfers" />
-        <Stat label="Pending verification" value={q.pendingCreators.length + q.pendingOrgs.length} hint="Creators and businesses" />
-      </div>
-
-      <Card className="mt-6">
-        <CardHeader title="Disputes" />
-        {q.openDisputes.length === 0 ? <p className="px-5 py-6 text-sm text-muted">No open disputes.</p> : (
-          <ul className="divide-y divide-line-2">
-            {q.openDisputes.map(({ dispute: d, campaign, creator, opener }) => (
-              <li key={d.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
-                <Avatar name={creator.displayName} color={creator.accent} size={34} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium capitalize">{d.category.replace(/_/g, " ")} <span className="font-normal normal-case text-muted">· {campaign.title} · {creator.displayName}</span></div>
-                  <div className="line-clamp-1 text-sm text-muted">{d.description}</div>
-                  <div className="text-xs text-muted">Opened by {opener.name} {relDays(d.createdAt)} · hold <Money minor={d.amountHeldMinor} /></div>
+      <Flash sp={sp as Record<string, string>} />
+      <div className="space-y-6 sm:space-y-8">
+        <DashHeader
+          name={actor.name}
+          accent="#0f766e"
+          greeting={greetingFor()}
+          title="Trust & safety"
+          actions={
+            <Link href="/admin/queue" className={limePill}>
+              <ShieldCheck size={16} aria-hidden /> Open review queue
+            </Link>
+          }
+        />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+          <div className="space-y-6">
+            <FilterDashboard views={views} panels={panels} initialView={initialView} defaultView={fallback} />
+          </div>
+          <aside className="space-y-6">
+            <SideCard title="Principles">
+              {[
+                ["Hold only what's disputed", "Undisputed earnings keep flowing to the creator."],
+                ["Every override has a reason", "Actor, time and reason go to the append-only audit log."],
+                ["Matching is advisory", "Signals never auto-reject a creator."],
+              ].map(([t, s]) => (
+                <div key={t} className="rounded-2xl bg-white/70 px-4 py-3">
+                  <div className="text-sm font-bold text-ink">{t}</div>
+                  <div className="mt-0.5 text-[13px] text-muted">{s}</div>
                 </div>
-                <StatusChip status={d.state} />
-                <Link href={`/admin/disputes/${d.id}`} className="inline-flex h-8 items-center rounded-lg bg-accent px-3 text-[13px] font-medium text-white">Review</Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="Excluded attribution events" description="Restore if the exclusion was wrong. Reason required." />
-          <ul className="max-h-[420px] divide-y divide-line-2 overflow-auto">
-            {q.invalidEvents.map(({ event: e, campaign, creator }) => (
-              <li key={e.id} className="px-5 py-3 text-sm">
-                <div className="flex items-center justify-between gap-2"><span className="font-mono text-xs">{e.eventId}</span><StatusChip status={e.validityState} /></div>
-                <div className="text-xs text-muted">{campaign.title} · {creator.displayName} · {e.reasonCode?.replace(/_/g, " ") ?? "—"}</div>
-                {e.validityState === "invalid" && (
-                  <form action={eventValidityAction} className="mt-2 flex gap-2">
-                    <input type="hidden" name="eventId" value={e.id} />
-                    <input type="hidden" name="to" value="valid" />
-                    <input type="hidden" name="back" value="/admin" />
-                    <input name="reason" aria-label="Reason" placeholder="Reason to restore" className={`${inputClass} h-8 py-1`} />
-                    <SubmitButton size="sm" variant="secondary">Restore</SubmitButton>
-                  </form>
-                )}
-              </li>
-            ))}
-            {q.invalidEvents.length === 0 && <li className="px-5 py-6 text-sm text-muted">Nothing excluded.</li>}
-          </ul>
-        </Card>
-        <div className="space-y-6">
-          <Card>
-            <CardHeader title="Verification requests" />
-            <ul className="divide-y divide-line-2">
-              {[...q.pendingCreators.map((c) => ({ kind: "creator" as const, id: c.id, name: c.displayName, sub: c.headline })), ...q.pendingOrgs.map((o) => ({ kind: "organization" as const, id: o.id, name: o.displayName, sub: o.legalName }))].map((x) => (
-                <li key={x.id} className="px-5 py-3 text-sm">
-                  <div className="font-medium">{x.name} <span className="font-normal text-muted">· {x.kind === "creator" ? "Creator ID" : "Business KYB"}</span></div>
-                  <div className="text-xs text-muted">{x.sub}</div>
-                  <form action={verificationAction} className="mt-2 flex flex-wrap gap-2">
-                    <input type="hidden" name="kind" value={x.kind} />
-                    <input type="hidden" name="id" value={x.id} />
-                    <input type="hidden" name="back" value="/admin" />
-                    <input name="reason" aria-label="Reason" defaultValue="Documents checked" className={`${inputClass} h-8 w-48 py-1`} />
-                    <SubmitButton name="to" value="verified" size="sm" variant="success">Verify</SubmitButton>
-                    <SubmitButton name="to" value="rejected" size="sm" variant="danger">Reject</SubmitButton>
-                  </form>
-                </li>
               ))}
-              {q.pendingCreators.length + q.pendingOrgs.length === 0 && <li className="px-5 py-6 text-sm text-muted">No pending requests.</li>}
-            </ul>
-          </Card>
-          <Card>
-            <CardHeader title="Payment exceptions" />
-            <ul className="divide-y divide-line-2">
-              {q.failedTransfers.map((t) => (
-                <li key={t.id} className="flex items-center justify-between px-5 py-3 text-sm"><span><Money minor={t.amountMinor} /> · <span className="font-mono text-xs">{t.providerRef}</span></span><StatusChip status={t.state} /></li>
-              ))}
-              {q.failedTransfers.length === 0 && <li className="px-5 py-6 text-sm text-muted">No failed transfers. Paid transfers can be reversed from the dispute view.</li>}
-            </ul>
-          </Card>
-          <Card>
-            <CardHeader title="Demo data" />
-            <form action={resetDemo} className="px-5 py-4">
-              <input type="hidden" name="back" value="/admin" />
-              <SubmitButton size="sm" variant="danger" confirm="Reset all demo data?">Reset demo data</SubmitButton>
-            </form>
-          </Card>
+            </SideCard>
+            <Link href="/admin/audit" className={cx(glassRow, "flex items-center gap-3 p-4")}>
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-100 text-indigo-700">
+                <ScrollText size={19} aria-hidden />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-bold text-ink">Audit trail</span>
+                <span className="block text-[13px] text-muted">Append-only at the database level</span>
+              </span>
+            </Link>
+          </aside>
         </div>
       </div>
-      <p className="mt-6 text-xs text-muted">Last refreshed {fmtDateTime(new Date())}.</p>
     </>
   );
 }

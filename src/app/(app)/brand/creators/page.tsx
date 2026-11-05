@@ -58,7 +58,7 @@ export default async function DiscoverCreators({ searchParams }: { searchParams:
                   ))}
                   {er && <div className="flex items-center justify-between"><span className="text-muted">Engagement</span><span className="flex items-center gap-2"><span className="tnum font-medium">{(er.valueNumeric / 100).toFixed(1)}%</span><ProvenanceChip status={er.verificationStatus} /></span></div>}
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-3 text-center">
+                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-sunken p-3 text-center">
                   <div><div className="tnum text-sm font-semibold">{r.completed}</div><div className="text-[11px] text-muted">completed</div></div>
                   <div><div className="tnum text-sm font-semibold">{pct(r.onTimeRate)}</div><div className="text-[11px] text-muted">on time</div></div>
                   <div><div className="tnum text-sm font-semibold">{r.verifiedOutcomes.toLocaleString("en-IN")}</div><div className="text-[11px] text-muted">verified results</div></div>
@@ -72,7 +72,7 @@ export default async function DiscoverCreators({ searchParams }: { searchParams:
           })}
         </div>
       )}
-      {nextCursor && <div className="mt-6 text-center"><ButtonLink variant="secondary" href={qs({ cursor: nextCursor })}>Load more</ButtonLink></div>}
+      {nextCursor && <div className="mt-8 text-center"><ButtonLink variant="secondary" href={qs({ cursor: nextCursor })}>Load more</ButtonLink></div>}
     </>
   );
 }

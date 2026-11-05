@@ -1,128 +1,161 @@
 import Link from "next/link";
-import { getDb } from "@/db";
+import { eq } from "drizzle-orm";
+import { ArrowUpRight, BadgeCheck, Plus } from "lucide-react";
+import { getDb, schema } from "@/db";
 import { formatINR } from "@/domain/money";
-import { Avatar, ButtonLink, Card, CardHeader, EmptyState, Flash, Money, PageHeader, Stat, StatusChip, fmtDate, relDays } from "@/components/ui";
-import { brandOverview } from "@/server/dashboards";
+import { Flash } from "@/components/ui";
+import { ContinueBlock, DashHeader, MoneyCta, SideCard } from "@/components/dashboard/blocks";
+import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
+import { FilteredList } from "@/components/dashboard/list";
+import { Fact, QuickSheet } from "@/components/dashboard/sheet";
+import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
+import { greetingFor, pickView } from "@/components/dashboard/types";
+import { brandHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
 
 export const metadata = { title: "Overview" };
 
-export default async function BrandOverview({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+export default async function BrandHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("brand");
-  const db = await getDb();
-  const o = await brandOverview(db, actor);
   const sp = await searchParams;
-  const attention = o.review.length + o.newApps.length + o.settle.length + o.disputesOpen.length;
+  const db = await getDb();
+  const [d, [org]] = await Promise.all([brandHomeData(db, actor), db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!))]);
+  const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const b = d.balances;
+  const campaignCount = of("campaigns").length;
+
+  const fallback = d.counts.action > 0 || campaignCount === 0 ? "action" : "campaigns";
+  const views: ViewDef[] = [
+    { id: "action", label: "Needs you", icon: "zap", tint: "bg-amber-100 text-amber-700", value: String(d.counts.action), caption: d.counts.action ? "Reviews, approvals, disputes" : "All caught up" },
+    { id: "campaigns", label: "Live campaigns", icon: "megaphone", tint: "bg-indigo-100 text-indigo-700", value: String(d.counts.live), caption: `${campaignCount} in total` },
+    { id: "applicants", label: "New applicants", icon: "users", tint: "bg-sky-100 text-sky-700", value: String(d.counts.newApplicants), caption: "Waiting for a decision" },
+    { id: "spend", label: "Paid to creators", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(b.creator_paid), caption: `${formatINR(b.campaign_funds)} held in escrow` },
+  ];
+  const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
+  const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
+  const newCampaign = (
+    <Link href="/brand/campaigns/new" className={limePill}>
+      <Plus size={16} aria-hidden /> New campaign
+    </Link>
+  );
+
+  const panels = {
+    action: (
+      <FilteredList
+        title="Needs you"
+        question="Content to review, earnings to approve or pay, and disputes to answer."
+        chips={[{ id: "all", label: "All" }, { id: "review", label: "Content review" }, { id: "money", label: "Approve & pay" }, { id: "disputes", label: "Disputes" }]}
+        rows={of("action")}
+        initialChip={chipFor("action")}
+        emptyTitle="You're all caught up"
+        emptyBody="No content, settlements or disputes are waiting on you."
+        emptyCta={campaignCount === 0 ? { href: "/brand/campaigns/new", label: "Launch your first campaign" } : undefined}
+      />
+    ),
+    campaigns: (
+      <FilteredList
+        title="Campaigns"
+        question="Every campaign with hiring progress and its apply-by date."
+        chips={[{ id: "all", label: "All" }, { id: "live", label: "Live" }, { id: "unfunded", label: "Needs funding" }, { id: "draft", label: "Drafts" }, { id: "closed", label: "Closed" }]}
+        rows={of("campaigns")}
+        initialChip={chipFor("campaigns")}
+        emptyTitle="No campaigns yet"
+        emptyBody="Set an objective, deliverables and a payout formula. Creators see every term before they apply."
+        emptyCta={{ href: "/brand/campaigns/new", label: "Create campaign" }}
+        action={<Link href="/brand/campaigns" className="text-sm font-semibold text-ink-2 hover:text-ink">All campaigns →</Link>}
+      />
+    ),
+    applicants: (
+      <FilteredList
+        title="Applicants"
+        question="Who applied, who you shortlisted and who you hired."
+        chips={[{ id: "all", label: "All" }, { id: "submitted", label: "New" }, { id: "shortlisted", label: "Shortlisted" }, { id: "offered", label: "Offered" }, { id: "hired", label: "Hired" }, { id: "closed", label: "Closed" }]}
+        rows={of("applicants")}
+        initialChip={chipFor("applicants")}
+        emptyTitle="No applicants yet"
+        emptyBody="Publish a campaign or invite creators from Discover."
+        emptyCta={{ href: "/brand/creators", label: "Discover creators" }}
+      />
+    ),
+    spend: (
+      <FilteredList
+        title="Spend"
+        question="Every money movement, straight from the double-entry ledger."
+        chips={[{ id: "all", label: "All" }, { id: "funded", label: "Funded" }, { id: "approved", label: "Approved" }, { id: "paid", label: "Paid out" }, { id: "held", label: "Held" }, { id: "refunded", label: "Refunded" }]}
+        rows={of("spend")}
+        initialChip={chipFor("spend")}
+        emptyTitle="No money has moved yet"
+        emptyBody="Funding a campaign creates the first ledger entry."
+        action={<Link href="/brand/billing" className="text-sm font-semibold text-ink-2 hover:text-ink">Billing & ledger →</Link>}
+      />
+    ),
+  };
 
   return (
     <>
-      <Flash sp={sp} />
-      <PageHeader
-        title={`Good to see you, ${actor.name.split(" ")[0]}`}
-        description={attention ? `${attention} thing${attention > 1 ? "s" : ""} need your attention.` : "You're all caught up."}
-        actions={<ButtonLink href="/brand/campaigns/new">New campaign</ButtonLink>}
-      />
-      {!o.stats ? (
-        <Card><EmptyState title="Launch your first campaign" body="Set an objective, deliverables and a payout formula. Creators see every material term before they apply." action={<ButtonLink href="/brand/campaigns/new">Create campaign</ButtonLink>} /></Card>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Live campaigns" value={o.stats.live} hint={`${o.camps.length} total`} />
-            <Stat label="Verified outcomes" value={o.stats.outcomes.toLocaleString("en-IN")} hint="Signed brand events, deduplicated" />
-            <Stat label="Approved for creators" value={formatINR(o.stats.committed)} hint={`${formatINR(o.stats.paidOut)} paid out`} />
-            <Stat label="Held at payment provider" value={formatINR(o.stats.held)} hint={`${formatINR(o.stats.funded)} funded in total (test mode)`} />
+      <Flash sp={sp as Record<string, string>} />
+      <div className="space-y-6 sm:space-y-8">
+        <DashHeader
+          name={actor.name}
+          accent="#4f46e5"
+          greeting={greetingFor()}
+          title={`${org?.displayName ?? "Brand"} overview`}
+          search={{ action: "/brand/creators", placeholder: "Search creators by niche, city, language", filtersHref: "/brand/creators" }}
+          actions={newCampaign}
+        />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+          <div className="space-y-6">
+            <FilterDashboard views={views} panels={panels} initialView={initialView} defaultView={fallback} />
           </div>
-
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader title="Content waiting for your review" description="Creators are paid against approved deliverables — quick reviews keep things fair." />
-              {o.review.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-muted">Nothing to review.</p>
+          <aside className="space-y-6">
+            {d.continueCard && <ContinueBlock data={d.continueCard} />}
+            <MoneyCta
+              amountLabel={`${formatINR(b.campaign_funds)} in escrow`}
+              sub={`${formatINR(b.creator_payable)} approved, awaiting payout`}
+              href="/brand/billing"
+              cta="Billing & ledger"
+            />
+            <SideCard title="Top creators" href="/brand/creators" linkLabel="Discover">
+              {d.topCreators.length === 0 ? (
+                <p className="px-1 text-sm text-muted">Creators with a verified track record appear here.</p>
               ) : (
-                <ul className="divide-y divide-line-2">
-                  {o.review.map(({ d, creator, campaign, agreement }) => (
-                    <li key={d.id} className="flex items-center gap-3 px-5 py-3">
-                      <Avatar name={creator.displayName} color={creator.accent} size={32} />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{creator.displayName} · {d.title}</div>
-                        <div className="truncate text-xs text-muted">{campaign.title} · submitted {d.submittedAt ? relDays(d.submittedAt) : ""}</div>
-                      </div>
-                      <ButtonLink size="sm" variant="secondary" href={`/collaborations/${agreement.id}`}>Review</ButtonLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            <Card>
-              <CardHeader title="Settlements to approve" description="Calculated from the accepted agreement and verified events." />
-              {o.settle.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-muted">No settlements pending.</p>
-              ) : (
-                <ul className="divide-y divide-line-2">
-                  {o.settle.map((s) => (
-                    <li key={s.rootId} className="flex items-center gap-3 px-5 py-3">
-                      <Avatar name={s.creator.displayName} color={s.creator.accent} size={32} />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{s.creator.displayName}</div>
-                        <div className="truncate text-xs text-muted">{s.campaign.title}</div>
-                      </div>
-                      <div className="text-right text-sm">
-                        {s.pending > 0 && <div><Money minor={s.pending} /> <span className="text-xs text-muted">to approve</span></div>}
-                        {s.payable > 0 && <div><Money minor={s.payable} /> <span className="text-xs text-muted">to pay</span></div>}
-                      </div>
-                      <ButtonLink size="sm" variant="secondary" href={`/collaborations/${s.rootId}/settlement`}>Open</ButtonLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            <Card>
-              <CardHeader title="New applications" />
-              {o.newApps.length === 0 ? (
-                <p className="px-5 py-6 text-sm text-muted">No new applications.</p>
-              ) : (
-                <ul className="divide-y divide-line-2">
-                  {o.newApps.slice(0, 6).map(({ app, creator, campaign }) => (
-                    <li key={app.id} className="flex items-center gap-3 px-5 py-3">
-                      <Avatar name={creator.displayName} color={creator.accent} size={32} />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{creator.displayName}</div>
-                        <div className="truncate text-xs text-muted">{campaign.title} · asks <Money minor={app.proposedRateMinor} /></div>
-                      </div>
-                      <ButtonLink size="sm" variant="secondary" href={`/brand/campaigns/${campaign.id}/applications`}>Compare</ButtonLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            <Card>
-              <CardHeader title="Campaigns" actions={<Link className="text-sm font-medium text-accent" href="/brand/campaigns">View all</Link>} />
-              <ul className="divide-y divide-line-2">
-                {o.camps.slice(0, 5).map((c) => (
-                  <li key={c.id}>
-                    <Link href={`/brand/campaigns/${c.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50">
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium">{c.title}</div>
-                        <div className="text-xs text-muted">{fmtDate(c.startAt)} – {fmtDate(c.endAt)} · <Money minor={c.budgetMinor} /></div>
-                      </div>
-                      <StatusChip status={c.status} />
+                d.topCreators.map((c) => (
+                  <QuickSheet
+                    key={c.id}
+                    avatarColor={c.accent}
+                    initials={c.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
+                    badge={`${c.verified} verified outcomes`}
+                    title={c.name}
+                    subtitle={`${c.location.split(",")[0]} · ${c.niches}`}
+                    eyebrow={c.verifiedId ? "ID verified creator" : "Creator"}
+                    description={c.headline}
+                  >
+                    <div className="mt-5 grid grid-cols-2 gap-2.5">
+                      <Fact label="Completed" value={String(c.completed)} />
+                      <Fact label="On time" value={c.onTime} />
+                      <Fact label="Rating" value={c.rating} />
+                      <Fact label="Rate" value={c.rate} />
+                    </div>
+                    {c.verifiedId && (
+                      <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                        <BadgeCheck size={16} aria-hidden /> Identity verified by proovd
+                      </p>
+                    )}
+                    <Link href={`/creators/${c.id}`} className={cx(darkPill, "mt-5 w-full")}>
+                      View profile & invite <ArrowUpRight size={16} className="text-lime" aria-hidden />
                     </Link>
-                  </li>
-                ))}
-              </ul>
-              {o.disputesOpen.length > 0 && (
-                <div className="border-t border-line-2 px-5 py-3 text-sm">
-                  <span className="font-medium text-bad">{o.disputesOpen.length} open dispute{o.disputesOpen.length > 1 ? "s" : ""}</span>
-                  <span className="text-muted"> · {o.disputesOpen.map((d) => d.campaign.title).join(", ")}</span>
-                </div>
+                  </QuickSheet>
+                ))
               )}
-            </Card>
-          </div>
-        </>
-      )}
+            </SideCard>
+            <section className={cx(glass, "p-5")}>
+              <div className="font-bold text-ink">Committed to creators</div>
+              <div className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-ink">{formatINR(b.creator_payable + b.dispute_hold + b.creator_paid)}</div>
+              <p className="mt-1 text-sm text-muted">Paid, approved or held. Every rupee is traceable to a verified event or approved deliverable.</p>
+            </section>
+          </aside>
+        </div>
+      </div>
     </>
   );
 }

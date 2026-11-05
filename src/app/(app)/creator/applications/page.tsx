@@ -29,7 +29,7 @@ export default async function MyApplications({ searchParams }: { searchParams: P
         {rows.length === 0 ? <EmptyState title="No applications yet" body="Find a campaign that fits your audience and apply in a couple of minutes." action={<ButtonLink href="/creator/campaigns">Discover campaigns</ButtonLink>} /> : (
           <ul className="divide-y divide-line-2">
             {rows.map(({ app, campaign }) => (
-              <li key={app.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
+              <li key={app.id} className="flex flex-wrap items-center gap-3 px-6 py-5">
                 <div className="min-w-0 flex-1">
                   <Link href={`/creator/campaigns/${campaign.id}`} className="font-medium hover:text-accent">{campaign.title}</Link>
                   <div className="text-sm text-muted">{NEXT[app.status]}</div>

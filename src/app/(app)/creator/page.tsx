@@ -1,91 +1,156 @@
 import Link from "next/link";
+import { ArrowUpRight, Compass } from "lucide-react";
 import { getDb } from "@/db";
-import { Avatar, ButtonLink, Card, CardHeader, Flash, Money, PageHeader, Progress, Stat, StatusChip, fmtDate, relDays } from "@/components/ui";
-import { describeFormula } from "@/domain/compensation";
 import { formatINR } from "@/domain/money";
-import { discoverCampaigns } from "@/server/campaigns";
-import { creatorHome } from "@/server/dashboards";
+import { Flash } from "@/components/ui";
+import { EarningsPreview } from "@/components/formula";
+import { ContinueBlock, DashHeader, MoneyCta, Ring, SideCard } from "@/components/dashboard/blocks";
+import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
+import { FilteredList } from "@/components/dashboard/list";
+import { Fact, QuickSheet } from "@/components/dashboard/sheet";
+import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
+import { greetingFor, pickView } from "@/components/dashboard/types";
+import { creatorHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
 
 export const metadata = { title: "Home" };
 
-export default async function CreatorHome({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
+export default async function CreatorHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("creator");
-  const db = await getDb();
-  const h = await creatorHome(db, actor);
   const sp = await searchParams;
-  const suggested = await discoverCampaigns(db, { niche: h.profile.primaryNiche, limit: 3 });
+  const d = await creatorHomeData(await getDb(), actor);
+  const of = (v: string) => d.rows.filter((r) => r.view === v);
+
+  // Smart default: "Needs you", unless nothing needs the creator and something is running.
+  const fallback = d.counts.action > 0 || d.counts.active === 0 ? "action" : "active";
+  const views: ViewDef[] = [
+    { id: "action", label: "Needs you", icon: "zap", tint: "bg-amber-100 text-amber-700", value: String(d.counts.action), caption: d.counts.action ? "Offers and to-dos" : "All caught up" },
+    { id: "active", label: "In progress", icon: "rocket", tint: "bg-emerald-100 text-emerald-700", value: String(d.counts.active), caption: "Active collaborations" },
+    { id: "applications", label: "Applications", icon: "send", tint: "bg-sky-100 text-sky-700", value: String(d.counts.applications), caption: "Open applications" },
+    { id: "earnings", label: "Earnings", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(d.balances.creator_paid), caption: d.balances.creator_payable ? `${formatINR(d.balances.creator_payable)} on its way` : "Paid lifetime" },
+  ];
+  const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
+  const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
+
+  const panels = {
+    action: (
+      <FilteredList
+        title="Needs you"
+        question="Offers to accept and content to submit or fix, soonest first."
+        chips={[{ id: "all", label: "All" }, { id: "offers", label: "Offers" }, { id: "soon", label: "Due soon" }, { id: "changes", label: "Changes requested" }]}
+        rows={of("action")}
+        initialChip={chipFor("action")}
+        emptyTitle="You're all caught up"
+        emptyBody="Nothing needs you right now. Find your next paid campaign."
+        emptyCta={{ href: "/creator/campaigns", label: "Discover campaigns" }}
+      />
+    ),
+    active: (
+      <FilteredList
+        title="In progress"
+        question="Every running collaboration with deliverable progress and earnings so far."
+        chips={[{ id: "all", label: "All" }, { id: "review", label: "Awaiting review" }, { id: "ontrack", label: "On track" }, { id: "dispute", label: "In dispute" }]}
+        rows={of("active")}
+        initialChip={chipFor("active")}
+        emptyTitle="No active collaborations"
+        emptyBody="Accepted offers show up here with their deliverables."
+        emptyCta={{ href: "/creator/campaigns", label: "Find a campaign" }}
+      />
+    ),
+    applications: (
+      <FilteredList
+        title="Applications"
+        question="Where each application stands and what happens next."
+        chips={[{ id: "all", label: "All" }, { id: "shortlisted", label: "Shortlisted" }, { id: "submitted", label: "Submitted" }, { id: "offered", label: "Offered" }, { id: "closed", label: "Closed" }]}
+        rows={of("applications")}
+        initialChip={chipFor("applications")}
+        emptyTitle="No applications yet"
+        emptyBody="Apply to campaigns in your niche. The payout formula is shown before you apply."
+        emptyCta={{ href: "/creator/campaigns", label: "Discover campaigns" }}
+      />
+    ),
+    earnings: (
+      <FilteredList
+        title="Earnings"
+        question="What you've been paid, what's approved and what's held."
+        chips={[{ id: "all", label: "All" }, { id: "paid", label: "Paid" }, { id: "payable", label: "On its way" }, { id: "held", label: "Held" }]}
+        rows={of("earnings")}
+        initialChip={chipFor("earnings")}
+        emptyTitle="No earnings yet"
+        emptyBody="Approved deliverables and verified outcomes turn into earnings here."
+        action={<Link href="/creator/earnings" className="text-sm font-semibold text-ink-2 hover:text-ink">Full history →</Link>}
+      />
+    ),
+  };
+
   return (
     <>
-      <Flash sp={sp} />
-      <PageHeader title={`Hi ${actor.name.split(" ")[0]}`} description="Here's what needs you today." actions={<ButtonLink href="/creator/campaigns">Find campaigns</ButtonLink>} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Paid out" value={formatINR(h.balances.creator_paid)} hint="Lifetime, via payment provider (test)" />
-        <Stat label="Approved, on its way" value={formatINR(h.balances.creator_payable)} hint={h.balances.dispute_hold ? `${formatINR(h.balances.dispute_hold)} held in a dispute` : "Ready for payout"} tone={h.balances.dispute_hold ? "warn" : undefined} />
-        <Stat label="Open applications" value={h.openApps} />
-        <Card className="px-5 py-4">
-          <div className="text-[13px] font-medium text-muted">Profile strength</div>
-          <div className="tnum mt-1.5 text-[26px] font-semibold">{h.strength}%</div>
-          <div className="mt-2"><Progress value={h.strength} max={100} label="Profile strength" /></div>
-          {h.strength < 100 && <Link href="/creator/profile" className="mt-2 inline-block text-xs font-medium text-accent">Complete your profile →</Link>}
-        </Card>
-      </div>
-
-      {h.offers.length > 0 && (
-        <Card className="mt-6 border-amber-200">
-          <CardHeader title="Offers waiting for you" description="Read the terms. Nothing is binding until you accept." />
-          <ul className="divide-y divide-line-2">
-            {h.offers.map(({ agreement, campaign, brand }) => (
-              <li key={agreement.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium">{campaign.title} <span className="font-normal text-muted">· {brand.displayName}{agreement.version > 1 ? ` · amendment v${agreement.version}` : ""}</span></div>
-                  <div className="text-xs text-muted">{describeFormula(agreement.formulaSnapshot)}</div>
-                </div>
-                <ButtonLink size="sm" href={`/collaborations/${agreement.id}`}>Review offer</ButtonLink>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader title="Your to-do list" description="Deliverables due or needing changes" />
-          {h.todo.length === 0 ? <p className="px-5 py-6 text-sm text-muted">Nothing due. Nice.</p> : (
-            <ul className="divide-y divide-line-2">
-              {h.todo.map(({ d, campaign, agreement }) => (
-                <li key={d.id}>
-                  <Link href={`/collaborations/${agreement.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50">
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{d.title} <span className="font-normal text-muted">· {campaign.title}</span></div>
-                      <div className={`text-xs ${d.dueAt < new Date() ? "text-bad" : "text-muted"}`}>Due {fmtDate(d.dueAt)} ({relDays(d.dueAt)})</div>
+      <Flash sp={sp as Record<string, string>} />
+      <div className="space-y-6 sm:space-y-8">
+        <DashHeader
+          name={d.profile.displayName}
+          accent={d.profile.accent}
+          greeting={greetingFor()}
+          title="Your creator dashboard"
+          search={{ action: "/creator/campaigns", placeholder: "Search campaigns, brands, niches", filtersHref: "/creator/campaigns" }}
+        />
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
+          <div className="space-y-6">
+            <FilterDashboard views={views} panels={panels} initialView={initialView} defaultView={fallback} />
+          </div>
+          <aside className="space-y-6">
+            {d.continueCard && <ContinueBlock data={d.continueCard} />}
+            {d.balances.creator_payable > 0 && (
+              <MoneyCta amountLabel={`${formatINR(d.balances.creator_payable)} on its way`} sub="Approved and queued for payout" href="/creator/earnings" cta="View earnings" />
+            )}
+            <SideCard title="For you" href="/creator/campaigns" linkLabel="Discover">
+              {d.recommended.length === 0 ? (
+                <p className="px-1 text-sm text-muted">You&apos;ve applied to every open campaign in your niche. New ones appear here.</p>
+              ) : (
+                d.recommended.map((c, i) => (
+                  <QuickSheet
+                    key={c.id}
+                    tone={i}
+                    initials={c.brand.slice(0, 2)}
+                    badge={c.model}
+                    title={c.title}
+                    subtitle={`${c.brand} · ${c.formulaText}`}
+                    eyebrow={c.brand}
+                    description={c.brief}
+                  >
+                    <div className="mt-5 grid grid-cols-2 gap-2.5">
+                      <Fact label="Pay" value={c.formulaText} />
+                      <Fact label="Channels" value={c.channels} />
+                      <Fact label="Runs" value={c.runs} />
+                      <Fact label="Apply by" value={c.applyBy} />
                     </div>
-                    <StatusChip status={d.approvalState} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <Card>
-          <CardHeader title={`New in ${h.profile.primaryNiche}`} actions={<Link className="text-sm font-medium text-accent" href="/creator/campaigns">Browse all</Link>} />
-          {suggested.items.length === 0 ? <p className="px-5 py-6 text-sm text-muted">No open campaigns in your niche right now.</p> : (
-            <ul className="divide-y divide-line-2">
-              {suggested.items.map(({ campaign: c, brand }) => (
-                <li key={c.id}>
-                  <Link href={`/creator/campaigns/${c.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50">
-                    <Avatar name={brand.displayName} color="#0f172a" size={32} />
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{c.title}</div>
-                      <div className="truncate text-xs text-muted">{brand.displayName} · {describeFormula(c.compensation)}</div>
+                    <div className="mt-4">
+                      <EarningsPreview formula={c.formula} target={c.target} title="What you could earn" />
                     </div>
-                    <Money minor={c.budgetMinor} className="text-xs text-muted" />
+                    <Link href={`/creator/campaigns/${c.id}`} className={cx(darkPill, "mt-5 w-full")}>
+                      View brief & apply <ArrowUpRight size={16} className="text-lime" aria-hidden />
+                    </Link>
+                  </QuickSheet>
+                ))
+              )}
+            </SideCard>
+            <section className={cx(glass, "flex items-center gap-4 p-5")}>
+              <Ring value={d.strength} />
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-ink">Profile strength</div>
+                <p className="mt-0.5 text-sm text-muted">{d.strength >= 100 ? "Brands see your full evidence." : "Complete profiles get shortlisted more."}</p>
+                {d.strength < 100 && (
+                  <Link href="/creator/profile" className={cx(limePill, "mt-3 px-4 py-2 text-[13px]")}>
+                    Complete profile
                   </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+                )}
+              </div>
+            </section>
+            <Link href="/creator/campaigns" className={cx(glass, "flex items-center gap-3 p-4 text-sm font-semibold text-ink transition-colors hover:bg-white/75 lg:hidden")}>
+              <Compass size={18} aria-hidden /> Browse all open campaigns
+            </Link>
+          </aside>
+        </div>
       </div>
     </>
   );

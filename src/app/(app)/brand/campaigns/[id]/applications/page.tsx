@@ -48,7 +48,7 @@ export default async function Applications({ params, searchParams }: { params: P
             const n = k === "all" ? rows.length : rows.filter((r) => r.app.status === k).length;
             return (
               <Link key={k} href={`/brand/campaigns/${campaign.id}/applications${k === "all" ? "" : `?filter=${k}`}`} aria-current={filter === k ? "true" : undefined}
-                className={`rounded-full border px-3 py-1 text-sm ${filter === k ? "border-accent bg-accent-50 text-accent-600" : "border-line bg-white text-ink-2 hover:bg-slate-50"}`}>
+                className={`rounded-full border px-4 py-2 text-[13px] font-semibold ${filter === k ? "border-transparent bg-lime font-semibold text-ink" : "border-black/[0.06] bg-white/70 text-ink-2 transition-colors hover:bg-white/60"}`}>
                 {l} <span className="tnum text-muted">{n}</span>
               </Link>
             );
@@ -115,7 +115,7 @@ export default async function Applications({ params, searchParams }: { params: P
                     <blockquote className="mt-4 border-l-2 border-line pl-3 text-sm leading-relaxed text-ink-2">{app.pitch}</blockquote>
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {reasons.map((x) => (
-                        <span key={x.label} className={`rounded-md px-2 py-0.5 text-xs ${x.positive ? "bg-good-50 text-good" : "bg-slate-100 text-muted"}`}>{x.positive ? "✓" : "–"} {x.label}</span>
+                        <span key={x.label} className={`rounded-md px-2 py-0.5 text-xs ${x.positive ? "bg-good-50 text-good" : "bg-black/5 text-muted"}`}>{x.positive ? "✓" : "–"} {x.label}</span>
                       ))}
                     </div>
                     {app.brandNote && <p className="mt-3 text-xs text-muted">Your note: {app.brandNote}</p>}
@@ -149,9 +149,9 @@ export default async function Applications({ params, searchParams }: { params: P
                   </div>
                 </div>
                 {canAct && (
-                  <details className="border-t border-line-2 bg-slate-50/50">
-                    <summary className="px-5 py-3 text-sm font-medium text-accent">Send offer to {creator.displayName.split(" ")[0]} →</summary>
-                    <form action={offerAction} className="space-y-4 px-5 pb-5">
+                  <details className="border-t border-line-2 bg-sunken/50">
+                    <summary className="px-6 py-4 text-sm font-medium text-accent">Send offer to {creator.displayName.split(" ")[0]} →</summary>
+                    <form action={offerAction} className="space-y-4 px-6 pb-6">
                       <input type="hidden" name="applicationId" value={app.id} />
                       <input type="hidden" name="back" value={back} />
                       <FormulaFields initial={campaign.compensation} target={campaign.measurement.target} compact />
@@ -177,9 +177,9 @@ export default async function Applications({ params, searchParams }: { params: P
 
 function Metric({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-muted">{label}</div>
-      <div className="tnum mt-0.5 text-[15px] font-semibold">{value}</div>
+    <div className="rounded-2xl border border-line-2 bg-sunken px-3.5 py-3">
+      <div className="eyebrow !text-[10px]">{label}</div>
+      <div className="tnum mt-1 text-lg font-bold tracking-[-0.01em]">{value}</div>
     </div>
   );
 }

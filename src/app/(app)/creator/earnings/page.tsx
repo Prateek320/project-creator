@@ -23,19 +23,19 @@ export default async function Earnings() {
   return (
     <>
       <PageHeader title="Earnings" description="Every rupee links back to the agreement version and the verified evidence it was calculated from." />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Stat label="Paid to you" value={formatINR(b.creator_paid)} hint="Via payment provider (test mode)" />
         <Stat label="Approved, awaiting payout" value={formatINR(b.creator_payable)} />
         <Stat label="Held for open disputes" value={formatINR(b.dispute_hold)} hint="Only the disputed portion is held" tone={b.dispute_hold ? "warn" : undefined} />
       </div>
-      <Card className="mt-6">
+      <Card className="mt-8">
         <CardHeader title="History" />
         {mine.length === 0 ? <EmptyState title="No earnings yet" body="Earnings appear here when a brand approves a settlement." /> : (
           <ul className="divide-y divide-line-2">
             {mine.map(({ entry, campaign, brand }) => {
               const [label, tone] = LABEL[`${entry.entryType}:${entry.account}`] ?? [entry.entryType, "neutral"];
               return (
-                <li key={entry.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                <li key={entry.id} className="flex flex-wrap items-center gap-3 px-6 py-4">
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium">{label}</div>
                     <div className="text-xs text-muted">{campaign.title} · {brand.displayName} · {fmtDateTime(entry.createdAt)}</div>

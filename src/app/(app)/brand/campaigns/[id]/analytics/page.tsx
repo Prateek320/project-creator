@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BadgeCheck, HandCoins, MousePointerClick, Target } from "lucide-react";
 import { getDb } from "@/db";
 import { csvImportAction, eventValidityAction } from "@/app/actions";
 import { BarChart } from "@/components/charts";
@@ -28,14 +29,14 @@ export default async function Analytics({ params, searchParams }: { params: Prom
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label={`Verified ${r.outcomeType}s`} value={valid.toLocaleString("en-IN")} hint={`Target ${r.campaign.measurement.target} per creator`} />
-        <Stat label="Tracked clicks" value={formatCompact(clicks)} hint={clicks ? `${pct(valid / clicks, 1)} click → ${r.outcomeType}` : "No clicks yet"} />
-        <Stat label="Earned by creators" value={formatINR(earned)} hint={`${formatINR(committed)} approved so far`} />
-        <Stat label={`Cost per ${r.outcomeType}`} value={valid ? formatINR(Math.round(earned / valid / 100) * 100) : "—"} hint={r.attributionCoverage === null ? "Attribution coverage —" : `Attribution coverage ${pct(r.attributionCoverage)}`} />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat icon={BadgeCheck} label={`Verified ${r.outcomeType}s`} value={valid.toLocaleString("en-IN")} hint={`Target ${r.campaign.measurement.target} per creator`} />
+        <Stat icon={MousePointerClick} label="Tracked clicks" value={formatCompact(clicks)} hint={clicks ? `${pct(valid / clicks, 1)} click → ${r.outcomeType}` : "No clicks yet"} />
+        <Stat icon={HandCoins} label="Earned by creators" value={formatINR(earned)} hint={`${formatINR(committed)} approved so far`} />
+        <Stat icon={Target} label={`Cost per ${r.outcomeType}`} value={valid ? formatINR(Math.round(earned / valid / 100) * 100) : "—"} hint={r.attributionCoverage === null ? "Attribution coverage —" : `Attribution coverage ${pct(r.attributionCoverage)}`} />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader title={`Verified ${r.outcomeType}s per day`} description="Valid events only — duplicates, test and excluded events are not counted." />
           <CardBody><BarChart data={r.series} label={`Verified ${r.outcomeType}s per day`} height={220} /></CardBody>
@@ -43,11 +44,11 @@ export default async function Analytics({ params, searchParams }: { params: Prom
         <Card>
           <CardHeader title="Content metrics" description="Every number shows where it came from." />
           {r.metrics.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-muted">No content metrics yet. They appear when creators connect accounts or upload insights.</p>
+            <p className="px-6 py-8 text-sm text-muted">No content metrics yet. They appear when creators connect accounts or upload insights.</p>
           ) : (
             <ul className="divide-y divide-line-2">
               {r.metrics.map(({ m, creator }) => (
-                <li key={m.id} className="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
+                <li key={m.id} className="flex items-center justify-between gap-3 px-6 py-3 text-sm">
                   <div className="min-w-0">
                     <div className="truncate">{METRIC_LABEL[m.metricKey] ?? m.metricKey}</div>
                     <div className="truncate text-xs text-muted" title={m.source}>{creator.displayName} · {m.source}</div>
@@ -63,28 +64,28 @@ export default async function Analytics({ params, searchParams }: { params: Prom
         </Card>
       </div>
 
-      <Card className="mt-6">
+      <Card className="mt-8">
         <CardHeader title="By creator" description="Settlement is computed from each creator's accepted agreement version." />
         {r.perCreator.length === 0 ? (
           <EmptyState title="No active creators yet" body="Results appear once a creator accepts an agreement." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
-              <thead><tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-5 py-3 font-medium">Creator</th><th className="px-3 py-3 text-right font-medium">Clicks</th><th className="px-3 py-3 text-right font-medium">Valid</th><th className="px-3 py-3 text-right font-medium">Excluded</th><th className="px-3 py-3 text-right font-medium">Deliverables</th><th className="px-3 py-3 text-right font-medium">Earned</th><th className="px-5 py-3 text-right font-medium">Paid</th>
+              <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
+                <th className="px-6 py-4 font-medium">Creator</th><th className="px-3 py-3 text-right font-medium">Clicks</th><th className="px-3 py-3 text-right font-medium">Valid</th><th className="px-3 py-3 text-right font-medium">Excluded</th><th className="px-3 py-3 text-right font-medium">Deliverables</th><th className="px-3 py-3 text-right font-medium">Earned</th><th className="px-6 py-4 text-right font-medium">Paid</th>
               </tr></thead>
               <tbody className="divide-y divide-line-2">
                 {r.perCreator.map((p) => {
                   const ex = p.settlement.excluded;
                   return (
-                    <tr key={p.rootId} className="hover:bg-slate-50">
-                      <td className="px-5 py-3"><Link href={`/collaborations/${p.rootId}/settlement`} className="flex items-center gap-2 font-medium hover:text-accent"><Avatar name={p.creator.displayName} color={p.creator.accent} size={26} />{p.creator.displayName}</Link><div className="pl-8 text-xs text-muted">code {p.coupon}</div></td>
+                    <tr key={p.rootId} className="transition-colors hover:bg-white/60">
+                      <td className="px-6 py-4"><Link href={`/collaborations/${p.rootId}/settlement`} className="flex items-center gap-2 font-medium hover:text-accent"><Avatar name={p.creator.displayName} color={p.creator.accent} size={26} />{p.creator.displayName}</Link><div className="pl-8 text-xs text-muted">code {p.coupon}</div></td>
                       <td className="tnum px-3 py-3 text-right">{p.clicks.toLocaleString("en-IN")}</td>
                       <td className="tnum px-3 py-3 text-right font-medium">{p.settlement.validOutcomes}</td>
                       <td className="tnum px-3 py-3 text-right text-muted">{ex.duplicate + ex.invalid + ex.outOfWindow + ex.test}</td>
                       <td className="tnum px-3 py-3 text-right">{p.settlement.deliverablesApproved}/{p.settlement.deliverablesTotal}</td>
                       <td className="px-3 py-3 text-right"><Money minor={p.settlement.totalMinor} /></td>
-                      <td className="px-5 py-3 text-right"><Money minor={p.paid} /></td>
+                      <td className="px-6 py-4 text-right"><Money minor={p.paid} /></td>
                     </tr>
                   );
                 })}
@@ -94,27 +95,27 @@ export default async function Analytics({ params, searchParams }: { params: Prom
         )}
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
         <Card>
           <CardHeader title="Recent outcome events" description="Exclude an event if it fails your agreed definition. Every override needs a reason and is audited." />
           {outcomeEvents.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-muted">No events yet. Send them via the signed webhook or upload a CSV.</p>
+            <p className="px-6 py-8 text-sm text-muted">No events yet. Send them via the signed webhook or upload a CSV.</p>
           ) : (
             <div className="max-h-[480px] overflow-auto">
               <table className="w-full min-w-[620px] text-sm">
-                <thead className="sticky top-0 bg-white"><tr className="border-b border-line text-left text-xs uppercase tracking-wide text-muted"><th className="px-5 py-2 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-3 py-2 font-medium">Status</th><th className="px-5 py-2" /></tr></thead>
+                <thead className="sticky top-0 bg-white/90 backdrop-blur"><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-3 py-2 font-medium">Status</th><th className="px-6 py-2.5" /></tr></thead>
                 <tbody className="divide-y divide-line-2">
                   {outcomeEvents.map((e) => (
                     <tr key={e.id}>
-                      <td className="px-5 py-2 font-mono text-xs">{e.eventId}</td>
+                      <td className="px-6 py-2.5 font-mono text-xs">{e.eventId}</td>
                       <td className="px-3 py-2 text-xs text-muted">{fmtDateTime(e.occurredAt)}</td>
                       <td className="px-3 py-2 text-xs text-muted">{e.source.replace(/_/g, " ")}</td>
                       <td className="px-3 py-2"><StatusChip status={e.validityState} /></td>
-                      <td className="px-5 py-2 text-right">
+                      <td className="px-6 py-2.5 text-right">
                         {(e.validityState === "valid" || e.validityState === "invalid") && (
                           <details className="relative inline-block text-left">
                             <summary className="text-xs font-medium text-accent">{e.validityState === "valid" ? "Exclude" : "Restore"}</summary>
-                            <form action={eventValidityAction} className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-xl border border-line bg-white p-3 shadow-lg">
+                            <form action={eventValidityAction} className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-2xl border border-line bg-white p-3 shadow-[var(--shadow-pop)]">
                               <input type="hidden" name="eventId" value={e.id} />
                               <input type="hidden" name="to" value={e.validityState === "valid" ? "invalid" : "valid"} />
                               <input type="hidden" name="back" value={back} />
@@ -145,7 +146,7 @@ export default async function Analytics({ params, searchParams }: { params: Prom
               </details>
               <SubmitButton size="sm" pendingLabel="Importing…">Import</SubmitButton>
             </form>
-            <div className="mt-4 rounded-lg bg-slate-50 p-3 text-xs text-muted">
+            <div className="mt-4 rounded-lg bg-sunken p-3 text-xs text-muted">
               Columns: <code>event_id</code>, <code>creator_id</code>, <code>event_type</code>, <code>occurred_at</code>, optional <code>value_minor</code>, <code>test</code>. For real-time events use the{" "}
               <Link href="/brand/settings#webhook" className="font-medium text-accent">signed webhook</Link>.
             </div>

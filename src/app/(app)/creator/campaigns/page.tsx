@@ -42,7 +42,7 @@ export default async function DiscoverCampaigns({ searchParams }: { searchParams
                   <Badge tone={c.compensation.model === "performance" ? "warn" : c.compensation.model === "hybrid" ? "accent" : "good"}>{MODEL[c.compensation.model]}</Badge>
                 </div>
                 <p className="mt-3 line-clamp-2 text-sm text-ink-2">{c.brief}</p>
-                <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm">
+                <div className="mt-4 rounded-2xl bg-sunken p-3 text-sm">
                   <div className="font-medium">{describeFormula(c.compensation)}</div>
                   <div className="mt-0.5 text-xs text-muted">Up to {formatINR(maxPayout(c.compensation, c.measurement.target * 3))} per creator · {c.creatorSlots} slot{c.creatorSlots > 1 ? "s" : ""}</div>
                 </div>
@@ -56,7 +56,7 @@ export default async function DiscoverCampaigns({ searchParams }: { searchParams
           ))}
         </div>
       )}
-      {nextCursor && <div className="mt-6 text-center"><ButtonLink variant="secondary" href={`?${more.toString()}`}>Load more</ButtonLink></div>}
+      {nextCursor && <div className="mt-8 text-center"><ButtonLink variant="secondary" href={`?${more.toString()}`}>Load more</ButtonLink></div>}
     </>
   );
 }

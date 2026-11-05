@@ -1,5 +1,5 @@
 /**
- * Relational schema for Project Creator (PostgreSQL).
+ * Relational schema for proovd (PostgreSQL).
  *
  * Money is always stored as integer minor units (paise) + ISO currency code.
  * Amounts use bigint columns in "number" mode: safe up to 2^53 paise (~₹90 trillion).

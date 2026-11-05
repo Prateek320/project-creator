@@ -1,119 +1,173 @@
-# Project Creator — MVP
+<div align="center">
 
-A performance-driven creator–brand marketplace: brands publish structured campaigns, creators apply, both sides accept a **versioned agreement**, deliverables are reviewed, outcomes are attributed through **tracked links, coupon codes and signed brand events**, and payouts follow the agreed **fixed / performance / hybrid** formula through an **append-only ledger**.
+<img src="src/app/icon.svg" alt="proovd logo" width="88" />
 
-> Demo build. No real money moves and no live social data is fetched. Payment and social providers run as mock adapters until provider approval and legal review (PRD §10 launch gate).
+# proovd
 
-## Quick start
+**Proof you can see. Performance you get paid for.**
+
+The operating system for creator–brand partnerships.
+
+Clear terms. Verified outcomes. Dependable payouts.
+
+![Next.js](https://img.shields.io/badge/Next.js-15-000?logo=nextdotjs) ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white) ![Tailwind](https://img.shields.io/badge/Tailwind-v4-38bdf8?logo=tailwindcss&logoColor=white) ![Tests](https://img.shields.io/badge/tests-29%20passing-047857) ![Status](https://img.shields.io/badge/status-MVP%20demo-b45309)
+
+<img src="docs/screenshots/02-brand-overview.png" alt="Brand overview: content to review, settlements to approve, new applications" width="900" />
+
+</div>
+
+---
+
+## The problem
+
+Influencer marketing still runs on DMs, spreadsheets and trust.
+
+- **Brands** pick creators by follower count, can't compare them consistently, and struggle to tie spend to results.
+- **Creators** chase unclear briefs, absorb scope changes, wait on payments, and get judged on vanity metrics instead of the value they deliver.
+
+## The idea
+
+A two-sided marketplace where every collaboration runs on a **versioned agreement** with a **transparent payout formula**, and outcomes are **verified** rather than claimed.
+
+> Think LinkedIn (verified creator identity) + Upwork (post, apply, hire) + Stripe (payouts you can trust) + an analytics layer, built around one question:
+> **"Which creator is most likely to deliver the best business outcome for this campaign, at this budget?"**
+
+## How it works
+
+| | |
+|---|---|
+| **1. Publish a clear brief** | Objective, deliverables, dates, usage rights and the payout formula, all visible before anyone applies. |
+| **2. Hire on evidence** | Compare applicants on verified track record, on-time delivery and audience data with its source shown, not just follower counts. |
+| **3. Agree, then execute** | Both sides accept a versioned agreement. Content, revisions and deadlines live in one workspace. |
+| **4. Settle what was verified** | Tracked links, coupon codes and signed brand events feed a reproducible settlement and an append-only ledger. |
+
+## Fair, performance-linked pay
+
+Three compensation models, agreed up front and snapshotted into every agreement:
+
+| Model | Example | Best for |
+|---|---|---|
+| **Fixed fee** | ₹8,000 when the Reel and 3 Stories are approved | UGC, awareness |
+| **Performance** | ₹100 per verified signup, capped at ₹10,000 | Trackable leads and sales |
+| **Hybrid** *(default)* | ₹3,000 base + ₹70 per verified signup, capped at ₹10,000 | Most outcome-led campaigns |
+
+**Worked example (hybrid):** deliverables approved + 50 verified signups → ₹3,000 + 50 × ₹70 = **₹6,500**. Duplicates and test signups are excluded automatically. Hitting 50% of the target doesn't mean 50% of the budget, and creators aren't penalised for a brand's landing page: the base is tied to work they control.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/04-applications.png" alt="Applicant comparison" /><br /><sub><b>Compare applicants</b>: track record, audience data labelled by source, advisory match signals</sub></td>
+    <td width="50%"><img src="docs/screenshots/07-settlement-after.png" alt="Settlement" /><br /><sub><b>Settlement</b>: line-by-line formula, event evidence, double-entry ledger</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/11-builder-compensation.png" alt="Campaign builder" /><br /><sub><b>Campaign builder</b>: live earnings preview and budget check before publishing</sub></td>
+    <td><img src="docs/screenshots/08-analytics.png" alt="Results and attribution" /><br /><sub><b>Results</b>: verified outcomes per day, per-creator settlement, metric sources</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/20-admin-queue.png" alt="Trust and safety queue" /><br /><sub><b>Operations</b>: disputes, excluded events, verification, audit trail</sub></td>
+    <td><img src="docs/screenshots/01-landing.png" alt="Landing page" /><br /><sub><b>Landing</b>: separate entry points for brands and creators</sub></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/14-campaign-brief-mobile.png" alt="Campaign brief on mobile" width="260" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/16-collab-creator-mobile.png" alt="Creator workspace on mobile" width="260" />
+  <br /><sub>Creator flows are designed for phones first.</sub>
+</p>
+
+## What's in the MVP
+
+**For brands:** campaign builder · applicant comparison and shortlisting · offers · content review with revision limits · signed conversion webhook and CSV import · settlement approval and payouts · ledger and billing · creator discovery
+
+**For creators:** campaign discovery with the payout formula up front · earnings calculator · applications · agreement acceptance · tracked link and coupon code · earnings history · profile, portfolio and account evidence
+
+**For operations:** dispute resolution that holds only the disputed amount · event overrides with an audit reason · creator and business verification · full audit trail
+
+**Under the hood**
+- **Versioned agreements:** accepted terms are never edited. Changes create an amendment both sides must accept.
+- **Deterministic settlement:** the same events and agreement version always produce the same payout. Approvals are incremental and idempotent, so nobody is paid twice.
+- **Append-only, double-entry ledger:** every transaction balances to zero, and database triggers block edits and deletes. Corrections are new entries.
+- **Evidence over vanity metrics:** every number is labelled *Verified API*, *Verified event*, *Creator reported*, *Estimated* or *Stale*, with its source and date.
+- **Tenant isolation:** brands can't see each other's campaigns, applicants or reports, enforced on the server and covered by tests.
+- **Advisory matching:** match signals are explained in plain language and never auto-reject anyone.
+
+## Run it locally
+
+Requires Node.js 20+. No database setup needed.
 
 ```bash
+git clone https://github.com/Prateek320/project-creator.git
+cd project-creator
 npm install
-npm run dev            # http://localhost:3000
+npm run dev
 ```
 
-No database setup is needed. Without `DATABASE_URL` the app uses **PGlite** (real Postgres compiled to WASM), saved in `./.data`. On first request it runs the SQL migrations and seeds a demo dataset **through the real domain services**, so every ledger entry, audit event and state transition is genuine.
+Open **http://localhost:3000** and pick a demo account. The first load takes a few seconds while it builds the demo data in an embedded Postgres (PGlite), saved in `./.data`.
 
-To use a real Postgres instead:
+| Demo account | What to try |
+|---|---|
+| **Aarav** · Glow Botanics (brand) | Approve Meera's last Story → *Send signups* → approve the settlement → pay out |
+| **Nisha** · Urban Stride (brand) | A performance campaign with a dispute over returned orders |
+| **Meera** (creator) | Active collaboration, tracked link, paid history (try it at phone width) |
+| **Zoya** (creator) | Accept a waiting offer |
+| **Ritu** (operations) | Resolve the open dispute with a written reason |
+
+Reset everything from **Team & settings → Reset demo data**.
+
+<details>
+<summary><b>Use a real Postgres database</b></summary>
 
 ```bash
 cp .env.example .env.local
 # DATABASE_URL=postgres://user:pass@localhost:5432/project_creator
-# SESSION_SECRET=<long random string>   (required with a real database)
-npm run db:smoke       # migrates, seeds, checks every ledger transaction balances
+# SESSION_SECRET=<long random string>
+npm run db:smoke   # runs migrations + seed and checks every ledger transaction balances
 npm run build && npm start
 ```
+</details>
 
-To start the demo over: **Team & settings → Reset demo data**, or delete `./.data`.
+<details>
+<summary><b>Architecture</b></summary>
 
-## Demo accounts (pick one on /login)
-
-| Account | Lands in |
-|---|---|
-| **Aarav Mehta** · Glow Botanics (brand) | Meera's final Story waiting for review → approve the settlement → pay out. Compare applicants, send offers, build a campaign. |
-| **Nisha Rao** · Urban Stride (brand) | Performance campaign with a dispute holding ₹1,500 of returned orders. |
-| **Meera Iyer** (creator) | Active hybrid collaboration, tracked link and code, paid and reviewed history. |
-| **Kabir Malhotra** (creator) | Part of his payout held in dispute; the undisputed portion is still payable. |
-| **Zoya Khan** (creator) | An offer waiting to be accepted. |
-| **Ritu Bansal** (operations) | Resolve disputes, restore excluded events, verify accounts, audit trail. |
-
-### A 3-minute walkthrough
-1. **Aarav** → Overview → *Review* Meera's Story 3 → **Approve** → *Send signups* (demo webhook, with one replayed event that's deduplicated) → **Earnings & settlement** → **Approve** → **Pay out**.
-2. Campaign → **Applications & creators**: track record, audience evidence with provenance chips, advisory match signals → **Send offer** to Sana.
-3. **Zoya** → *Review offer* → **Accept agreement**: deliverables, tracked link and coupon are issued.
-4. **Ritu** → open the Urban Stride dispute → split the hold with a reason → both sides are notified and the ledger records a compensating release.
-5. **Meera** (try it at phone width) → Discover campaigns → open one → payout calculator → apply.
-
-## What's built
-
-| Area | Where |
-|---|---|
-| Landing with brand / creator entry points | `/` |
-| Demo auth (signed httpOnly cookie) | `/login`, `src/server/session.ts` |
-| Brand overview: review queue, settlements, new applications | `/brand` |
-| Campaign list, 4-step builder with autosave + live payout preview + budget check | `/brand/campaigns`, `/brand/campaigns/new` |
-| Campaign detail: terms, budget/funding, status transitions, refunds | `/brand/campaigns/[id]` |
-| Applicant comparison: track record, provenance, advisory match reasons, shortlist / decline / offer | `/brand/campaigns/[id]/applications` |
-| Results: verified outcomes per day, per-creator settlement, content metrics with provenance, event exclusion, CSV import | `/brand/campaigns/[id]/analytics` |
-| Creator discovery (server-side filters, cursor pagination) and profiles | `/brand/creators`, `/creators/[id]` |
-| Ledger view, webhook docs with a correctly signed sample request | `/brand/billing`, `/brand/settings` |
-| Creator home, discovery, brief + earnings calculator + apply, applications, earnings, profile/accounts/portfolio | `/creator/*` |
-| Collaboration workspace: offer/amendment diff and acceptance, deliverables + revisions, tracking, activity trail, amendments, reviews | `/collaborations/[id]` |
-| Settlement: line-by-line formula explanation, event evidence, ledger, payouts, disputes | `/collaborations/[id]/settlement` |
-| Ops: dispute queue and resolution, excluded events, verification, audit trail | `/admin/*` |
-| Signed conversion webhook (HMAC-SHA256, idempotent, rate limited) | `POST /api/v1/attribution/events` |
-| First-party tracked links (deduplicated clicks, bot filtering, UTM + IDs appended) | `GET /r/[slug]` |
-
-## Architecture
-
-Modular monolith (Next.js 15 App Router, TypeScript strict, Tailwind v4, Drizzle ORM, PostgreSQL).
+A modular monolith: Next.js 15 App Router, TypeScript (strict), Tailwind CSS v4, Drizzle ORM, PostgreSQL.
 
 ```
-src/domain/     pure logic, no I/O — compensation engine, state machines, ledger rules, attribution contract, money
-src/server/     services: every function takes an Actor and authorises it (tenant isolation lives here)
-  core.ts         actor, access checks, audit, notifications, idempotent ledger posting
-  campaigns.ts    create/publish/transition/fund, discovery
-  collaborations  applications, offers, versioned agreements + amendments, deliverables
-  finance.ts      attribution ingest, settlement, payouts, refunds, disputes, reporting
-  creators.ts     profiles, reputation, provenance-aware metrics, explainable match reasons
-  providers.ts    PaymentProvider adapter (mock only)
+src/domain/     pure business logic: compensation engine, state machines, ledger rules, attribution, money
+src/server/     services; every function takes the signed-in user and checks access
 src/app/        pages (server components), thin server actions, API routes
-src/db/         schema, connection (PGlite or Postgres), seed
-drizzle/        SQL migrations (incl. DB triggers making ledger + audit append-only)
-tests/          domain tests + service integration tests on in-memory Postgres
+src/db/         schema, connection (PGlite or Postgres), demo seed
+drizzle/        SQL migrations, including triggers that make the ledger and audit log append-only
+tests/          domain unit tests + service integration tests on in-memory Postgres
 ```
 
-Key decisions (see PRD §8, §12):
+Endpoints:
+- `POST /api/v1/attribution/events`: signed (HMAC-SHA256), idempotent, rate-limited conversion webhook
+- `GET /r/[slug]`: first-party tracked link with deduplicated clicks and bot filtering
+- `GET /api/health`
+</details>
 
-- **Money** is integer paise everywhere (`bigint`), parsed from text without floats.
-- **Agreements are immutable once accepted.** Changes create a new version; the old one is `superseded`, never edited. Settlement always uses the active accepted version's formula snapshot.
-- **Settlement is deterministic and incremental.** `evaluateSettlement()` is pure; approvals post only the delta since the last approval, with an idempotency key tied to the agreement version and total, so retries and double-clicks can't double-pay.
-- **Double-entry, append-only ledger.** Every transaction group sums to zero; a Postgres trigger rejects `UPDATE`/`DELETE` on `ledger_entries` and `audit_events`. Reversals are compensating entries. The platform never claims to hold funds: `campaign_funds` mirrors money held by the payment provider.
-- **Fairness guardrails.** Hybrid is the default; the base is tied to creator-controlled deliverables; floors only apply once content is approved; disputes hold only the disputed amount.
-- **Evidence over vanity metrics.** Every metric carries a provenance status (`verified_api`, `creator_reported`, `estimated`, `stale`, …) shown as a chip with source and date. Disconnecting an account revokes its token reference and marks its metrics stale.
-- **AI/matching is advisory.** Match reasons are plain-language signals; nothing is auto-rejected or ranked by an opaque score.
-- **Tenant isolation**: "not found" is returned for both missing and foreign records, so tenants can't probe IDs.
-
-## Quality checks
+<details>
+<summary><b>Quality checks</b></summary>
 
 ```bash
-npm run typecheck   # strict TS, no `any`
-npm run lint
-npm test            # 29 tests: formulas, exclusions, determinism, caps/floors, state machines,
-                    # HMAC, CSV, tenant isolation, role checks, end-to-end slice, webhook idempotency,
-                    # amendments, revision limits, append-only ledger, balanced groups, dispute holds, reversals
-npm run build
+npm run typecheck && npm run lint && npm test && npm run build
 ```
 
-Also verified: full browser walkthrough of the brand, creator (mobile viewport), offer acceptance and ops flows with no console errors; signed webhook accepted once and deduplicated on replay; bad or tampered signatures rejected; migrations + seed on real PostgreSQL 16 with every ledger group balanced.
+29 tests cover payout formulas, exclusions, caps and floors, determinism, state transitions, webhook signatures and replay, tenant isolation, role checks, amendments, revision limits, ledger integrity, dispute holds and payout reversals.
+</details>
 
-## Known limitations / next steps
+## Status and roadmap
 
-- **Auth** is a demo stand-in. Replace `getActor()` in `src/server/session.ts` with a managed provider (Clerk / Auth.js / Supabase) and add MFA for owners and ops actions. Team invites are not built yet.
-- **Payments**: mock provider only. A split-settlement provider (e.g. Razorpay Route) plugs in behind `PaymentProvider` after eligibility, KYC/KYB and legal sign-off. Reconciliation against provider webhooks is not built.
-- **Social APIs**: no OAuth yet (needs Meta / Google app review). Manual evidence is the working path; seeded "Verified API" numbers are labelled demo data.
-- **Uploads**: evidence and portfolio are links; object storage with signed URLs and malware scanning is not wired.
-- **Background jobs** (metric sync, reminders, email) and email notifications are not wired; notifications are in-app.
-- **Rate limiting** is in-memory (single instance). Use a shared store when scaling out.
-- **Webhook secrets** are stored in the database for the demo; move them to a secrets manager with rotation.
-- Settlement reduction after events are excluded post-approval is routed to a dispute rather than an automatic clawback (by design for the MVP).
-- PRD §21 open decisions (beachhead vertical, platform fee model, cancellation policy, rights defaults, tax/TDS) are not encoded yet.
+This is an **MVP demo**. No real money moves and no live social data is fetched: payments and social platforms run through mock adapters.
+
+- **Now:** full campaign → apply → agree → deliver → verify → settle loop, with mock payments
+- **Next:** managed login with MFA · a regulated payment provider for collections and payouts (e.g. Razorpay Route, after legal review) · creator-authorised Instagram and YouTube data · file uploads · email notifications
+- **Later:** smarter matching built on verified outcomes · agency workspaces · creator reputation that travels with them · more channels and countries
+
+Initial market: Indian D2C brands (beauty, fashion, fitness, food) running Instagram and YouTube creator campaigns.
+
+---
+
+<sub>Built by <a href="https://github.com/Prateek320">Prateek Bhoge</a>. Product and design are in progress.</sub>

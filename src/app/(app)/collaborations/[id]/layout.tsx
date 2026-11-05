@@ -16,7 +16,7 @@ export default async function CollabLayout({ children, params }: { children: Rea
   if (!c) notFound();
   const [brand] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, c.campaign.organizationId));
   const status = c.active?.status ?? c.pending?.status ?? c.root.status;
-  const back = c.side === "creator" ? { href: "/creator/collaborations", label: "Collaborations" } : c.side === "brand" ? { href: `/brand/campaigns/${c.campaign.id}`, label: c.campaign.title } : { href: "/admin", label: "Queue" };
+  const back = c.side === "creator" ? { href: "/creator/collaborations", label: "Collaborations" } : c.side === "brand" ? { href: `/brand/campaigns/${c.campaign.id}`, label: c.campaign.title } : { href: "/admin/queue", label: "Queue" };
   return (
     <>
       <PageHeader

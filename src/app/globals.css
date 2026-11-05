@@ -1,50 +1,121 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Principles (learnui.design "7 rules"):
+ *  - Light comes from above: raised surfaces are lighter with a soft shadow below; inputs are sunken.
+ *  - Grayscale first, one accent hue: every gray is a slightly blue-saturated slate, never pure gray.
+ *  - Accent = one indigo hue at several brightness/saturation steps.
+ */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-canvas: #f6f7f9;
+  --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-canvas: #f3f5f9;
   --color-surface: #ffffff;
-  --color-ink: #0f172a;
-  --color-ink-2: #334155;
-  --color-muted: #64748b;
-  --color-line: #e5e7eb;
-  --color-line-2: #eef0f3;
+  --color-sunken: rgba(255, 255, 255, 0.55);
+  --color-ink: #0f1222;
+  --color-lime: #e3f25c;
+  --color-lime-soft: #f3f9c4;
+  --color-ink-2: #2f3a55;
+  --color-muted: #66708a;
+  --color-faint: #96a0b5;
+  --color-line: rgba(15, 18, 34, 0.09);
+  --color-line-2: rgba(15, 18, 34, 0.06);
+
   --color-accent: #4f46e5;
-  --color-accent-600: #4338ca;
-  --color-accent-50: #eef2ff;
-  --color-accent-100: #e0e7ff;
+  --color-accent-400: #6d68f7;
+  --color-accent-600: #4038c9;
+  --color-accent-700: #352ea8;
+  --color-accent-50: #f0f1ff;
+  --color-accent-100: #e2e3ff;
+  --color-accent-200: #c9caff;
+
   --color-good: #047857;
   --color-good-50: #ecfdf5;
   --color-warn: #b45309;
   --color-warn-50: #fffbeb;
-  --color-bad: #b91c1c;
+  --color-bad: #c02626;
   --color-bad-50: #fef2f2;
   --color-info: #0369a1;
   --color-info-50: #f0f9ff;
-  --radius-card: 14px;
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.02);
+
+  --font-creator: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 16px;
+
+  /* Raised: lighter top edge (inner highlight) + soft, slightly offset shadow below. */
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(14, 22, 48, 0.05), 0 2px 8px -2px rgba(14, 22, 48, 0.06);
+  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(14, 22, 48, 0.05), 0 10px 24px -8px rgba(14, 22, 48, 0.14);
+  --shadow-pop: 0 4px 8px -2px rgba(14, 22, 48, 0.08), 0 16px 32px -8px rgba(14, 22, 48, 0.18);
+  /* Sunken: inner shadow at the top edge. */
+  --shadow-inset: inset 0 1px 2px rgba(14, 22, 48, 0.06);
+
+  --animate-rise: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade: fade 180ms ease-out both;
+  --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-grow: grow 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 html { -webkit-text-size-adjust: 100%; }
 body {
-  background: var(--color-canvas);
+  /* Warm-glass canvas shared by every workspace. */
+  background: linear-gradient(135deg, #dcfce7 0%, #fffbeb 50%, #dbeafe 100%) var(--color-canvas);
+  min-height: 100dvh;
   color: var(--color-ink);
-  font-feature-settings: "cv11", "ss01", "tnum" 0;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+h1, h2, h3 { letter-spacing: -0.015em; }
 .tnum { font-variant-numeric: tabular-nums; }
 
-:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; }
+/* Small, uppercase, tracked label: pops by case and spacing, un-pops by size and color. */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-muted);
 }
+
+:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 8px; }
+::selection { background: var(--color-lime); color: var(--color-ink); }
+
+/* Page entrance: sections rise in with a short stagger. */
+.page-enter > * { animation: var(--animate-rise); }
+.page-enter > *:nth-child(2) { animation-delay: 40ms; }
+.page-enter > *:nth-child(3) { animation-delay: 80ms; }
+.page-enter > *:nth-child(4) { animation-delay: 120ms; }
+.page-enter > *:nth-child(n + 5) { animation-delay: 160ms; }
+
+/* Popovers built on <details> open with a short pop. */
+details[open] > :not(summary) { animation: var(--animate-pop-in); }
+
+/* Grid children may shrink below their content width (prevents horizontal overflow on phones). */
+.grid > * { min-width: 0; }
 
 details > summary { list-style: none; cursor: pointer; }
 details > summary::-webkit-details-marker { display: none; }
 
-input[type="range"] { accent-color: var(--color-accent); }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--color-accent); }
+input[type="range"] { accent-color: var(--color-ink); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-ink); }
+input[type="file"]::file-selector-button { cursor: pointer; }
 
-/* Grid children may shrink below their content width (prevents horizontal overflow on phones). */
-.grid > * { min-width: 0; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

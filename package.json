@@ -1,5 +1,5 @@
 {
-  "name": "project-creator",
+  "name": "proovd",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,15 +11,20 @@
     "lint": "eslint .",
     "test": "vitest run",
     "db:smoke": "tsx scripts/pg-smoke.ts",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "ship": "sh scripts/ship.sh"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.8",
+    "@fontsource-variable/figtree": "^5.2.8",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "drizzle-orm": "^0.44.5",
+    "lucide-react": "^0.544.0",
     "next": "^15.5.29",
     "pg": "^8.16.3",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",

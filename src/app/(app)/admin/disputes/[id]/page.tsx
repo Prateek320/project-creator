@@ -25,10 +25,10 @@ export default async function DisputeReview({ params, searchParams }: { params: 
   const back = `/admin/disputes/${d.id}`;
   return (
     <>
-      <PageHeader eyebrow={<Link href="/admin" className="hover:text-ink">← Queue</Link>} title={<span className="flex items-center gap-3 capitalize">{d.category.replace(/_/g, " ")} <StatusChip status={d.state} /></span>} description={`${s.collab.campaign.title} · ${s.collab.creator.displayName} · opened by ${opener?.name}`} />
+      <PageHeader eyebrow={<Link href="/admin/queue" className="hover:text-ink">← Queue</Link>} title={<span className="flex items-center gap-3 capitalize">{d.category.replace(/_/g, " ")} <StatusChip status={d.state} /></span>} description={`${s.collab.campaign.title} · ${s.collab.creator.displayName} · opened by ${opener?.name}`} />
       <Flash sp={sp} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div className="space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+        <div className="space-y-8">
           <Card>
             <CardHeader title="Claim" />
             <CardBody className="space-y-2 text-sm"><p>{d.description}</p><p className="text-muted">Hold requested: {formatINR(d.amountHeldMinor)} · {fmtDateTime(d.createdAt)}</p></CardBody>
@@ -50,7 +50,7 @@ export default async function DisputeReview({ params, searchParams }: { params: 
             <CardHeader title="Payouts" description="Reversal appends compensating ledger entries." />
             <ul className="divide-y divide-line-2">
               {s.transfers.map((t) => (
-                <li key={t.id} className="flex flex-wrap items-center gap-3 px-5 py-3 text-sm">
+                <li key={t.id} className="flex flex-wrap items-center gap-3 px-6 py-4 text-sm">
                   <span className="flex-1"><Money minor={t.amountMinor} /> · <span className="font-mono text-xs">{t.providerRef}</span></span>
                   <StatusChip status={t.state} />
                   {t.state === "paid" && (
@@ -63,12 +63,12 @@ export default async function DisputeReview({ params, searchParams }: { params: 
                   )}
                 </li>
               ))}
-              {s.transfers.length === 0 && <li className="px-5 py-4 text-sm text-muted">No payouts.</li>}
+              {s.transfers.length === 0 && <li className="px-6 py-5 text-sm text-muted">No payouts.</li>}
             </ul>
           </Card>
           <Card>
             <CardHeader title="Audit trail" />
-            <ul className="divide-y divide-line-2">{trail.map((t) => <li key={t.id} className="px-5 py-2.5 text-sm">{t.action} <span className="text-xs text-muted">· {fmtDateTime(t.createdAt)}{t.reason ? ` · ${t.reason}` : ""}</span></li>)}</ul>
+            <ul className="divide-y divide-line-2">{trail.map((t) => <li key={t.id} className="px-6 py-3 text-sm">{t.action} <span className="text-xs text-muted">· {fmtDateTime(t.createdAt)}{t.reason ? ` · ${t.reason}` : ""}</span></li>)}</ul>
           </Card>
         </div>
         <Card className="lg:sticky lg:top-20 lg:self-start">

@@ -150,7 +150,7 @@ export async function seed(db: DB): Promise<void> {
   await db.insert(schema.portfolioItems).values([
     { creatorProfileId: creatorIds.meera!, title: "Vitamin C serum 30-day diary", url: "https://instagram.com/p/demo-meera-1", platform: "Instagram", brandName: "Dewdrop Labs", resultSummary: "212K views · 1,140 saves" },
     { creatorProfileId: creatorIds.meera!, title: "Monsoon skincare routine (long-form)", url: "https://youtube.com/watch?v=demo-meera-2", platform: "YouTube", brandName: null, resultSummary: "48K views · 6.1% CTR on description link" },
-    { creatorProfileId: creatorIds.meera!, title: "Sunscreen myths, busted", url: "https://instagram.com/p/demo-meera-3", platform: "Instagram", brandName: "Glow Botanics", resultSummary: "Verified 50 signups on Project Creator" },
+    { creatorProfileId: creatorIds.meera!, title: "Sunscreen myths, busted", url: "https://instagram.com/p/demo-meera-3", platform: "Instagram", brandName: "Glow Botanics", resultSummary: "Verified 50 signups on proovd" },
     { creatorProfileId: creatorIds.kabir!, title: "12-week strength block", url: "https://youtube.com/watch?v=demo-kabir-1", platform: "YouTube", brandName: null, resultSummary: "310K views" },
   ]);
 

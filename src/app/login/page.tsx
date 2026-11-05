@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { loginAs } from "@/app/actions";
 import { Logo } from "@/components/logo";
-import { Avatar, Card, Flash } from "@/components/ui";
+import { Avatar, Card, Flash, buttonClass } from "@/components/ui";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = { title: "Sign in" };
@@ -31,25 +32,25 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
   featured.sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role));
 
   return (
-    <div className="min-h-dvh bg-canvas">
-      <main id="main" className="mx-auto max-w-2xl px-4 py-10 sm:py-16">
+    <div className="min-h-dvh">
+      <main id="main" className="page-enter mx-auto max-w-2xl px-4 py-10 sm:py-16">
         <Link href="/"><Logo /></Link>
-        <h1 className="mt-8 text-2xl font-semibold tracking-tight">Sign in to the demo</h1>
+        <h1 className="mt-10 text-[28px] font-bold tracking-[-0.02em]">Sign in to the demo</h1>
         <p className="mt-1 text-muted">Pick a seeded account. Each one lands mid-workflow so you can try the full loop. Authentication here is a demo stand-in for a managed auth provider.</p>
-        <div className="mt-6"><Flash sp={sp} /></div>
+        <div className="mt-8"><Flash sp={sp} /></div>
         <Card className="divide-y divide-line-2">
           {featured.map((u) => (
-            <form key={u.id} action={loginAs} className="flex items-center gap-4 px-5 py-4">
+            <form key={u.id} action={loginAs} className="flex items-center gap-4 px-6 py-5">
               <input type="hidden" name="email" value={u.email} />
               <Avatar name={u.name} color={u.role === "brand" ? "#0f172a" : u.role === "admin" ? "#b45309" : undefined} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{u.name}</span>
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize text-muted">{u.role === "admin" ? "Operations" : u.role}{orgOf(u.email) ? ` · ${orgOf(u.email)}` : ""}</span>
+                  <span className="rounded-full bg-black/5 px-2 py-0.5 text-xs capitalize text-muted">{u.role === "admin" ? "Operations" : u.role}{orgOf(u.email) ? ` · ${orgOf(u.email)}` : ""}</span>
                 </div>
                 <div className="mt-0.5 text-sm text-muted">{SCENARIOS[u.email]}</div>
               </div>
-              <button className="rounded-lg border border-line bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-50">Continue</button>
+              <button className={buttonClass("secondary", "sm")}>Continue <ArrowRight size={14} aria-hidden /></button>
             </form>
           ))}
         </Card>
@@ -57,7 +58,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<Re
           <summary className="text-sm font-medium text-accent">More creator accounts ({others.length})</summary>
           <Card className="mt-2 divide-y divide-line-2">
             {others.map((u) => (
-              <form key={u.id} action={loginAs} className="flex items-center gap-3 px-5 py-3">
+              <form key={u.id} action={loginAs} className="flex items-center gap-3 px-6 py-4">
                 <input type="hidden" name="email" value={u.email} />
                 <span className="flex-1 text-sm">{u.name}</span>
                 <button className="text-sm font-medium text-accent hover:underline">Sign in</button>
