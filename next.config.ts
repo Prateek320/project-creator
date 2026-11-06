@@ -8,11 +8,15 @@ import type { NextConfig } from "next";
 const csp = [
   "default-src 'self'",
   // React's dev build evaluates strings for debugging; production builds don't need unsafe-eval.
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  // Clerk: its frontend API on *.clerk.accounts.dev (dev) or clerk.<domain> (prod), avatars on
+  // img.clerk.com, and Cloudflare's bot-protection challenge on sign-up.
+  `script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://challenges.cloudflare.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.clerk.accounts.dev https://clerk-telemetry.com",
+  "frame-src https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
