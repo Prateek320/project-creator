@@ -15,7 +15,7 @@ export default function SignUpPage() {
         <Logo size={30} />
       </Link>
       <Suspense>
-        <SignUp />
+        <SignUp fallbackRedirectUrl="/onboarding" />
       </Suspense>
     </main>
   );

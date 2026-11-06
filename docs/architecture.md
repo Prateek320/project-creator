@@ -136,7 +136,7 @@ flowchart LR
 - **Revisit when:** never for money paths.
 
 ### ADR-004: Managed auth with organisations and MFA
-- **Choice:** Clerk; `users.auth_subject` stores the provider id; `getActor()` is the only integration point.
+- **Choice:** Clerk; `users.auth_subject` stores the provider id; `getActor()` is the only integration point. Brand teams are Clerk organisations linked by `organizations.clerk_org_id`; the session's active organisation decides a brand actor's org on every request, and `memberships` is a local mirror. MFA (session `fva` claim) is required for brand owners and ops.
 - **Why:** fintech-adjacent product; MFA and team invites are table stakes.
 - **Tradeoff:** vendor dependency and per-MAU pricing above the free tier.
 - **Revisit when:** MAU > 10k or enterprise SSO is required.

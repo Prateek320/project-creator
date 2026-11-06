@@ -98,6 +98,8 @@ export const users = pgTable("users", {
 export const organizations = pgTable("organizations", {
   id: id(),
   type: orgType("type").notNull().default("brand"),
+  /** Clerk organisation id (org_…). Null for seeded demo orgs. Team membership lives in Clerk. */
+  clerkOrgId: text("clerk_org_id").unique(),
   legalName: text("legal_name").notNull(),
   displayName: text("display_name").notNull(),
   category: text("category").notNull().default("D2C"),

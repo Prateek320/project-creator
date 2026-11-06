@@ -4,11 +4,12 @@
  */
 import { ClerkProvider } from "@clerk/nextjs";
 import type { ReactNode } from "react";
+import { clerkConfigured } from "@/server/env";
 
-export const clerkEnabled = () => Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
+export { clerkConfigured as clerkEnabled } from "@/server/env";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  if (!clerkEnabled()) return <>{children}</>;
+  if (!clerkConfigured()) return <>{children}</>;
   return (
     <ClerkProvider
       appearance={{

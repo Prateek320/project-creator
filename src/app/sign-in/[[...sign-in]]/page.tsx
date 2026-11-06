@@ -15,7 +15,7 @@ export default function SignInPage() {
         <Logo size={30} />
       </Link>
       <Suspense>
-        <SignIn />
+        <SignIn fallbackRedirectUrl="/onboarding" />
       </Suspense>
     </main>
   );

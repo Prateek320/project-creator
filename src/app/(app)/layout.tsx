@@ -6,7 +6,8 @@ import { NavLinks, type NavItem } from "@/components/nav";
 import { Avatar, TestModeBadge } from "@/components/ui";
 import { ArrowLeftRight, Bell, ChevronDown, FlaskConical, LogOut, Menu, Settings, UserRound } from "lucide-react";
 import { listNotifications } from "@/server/admin";
-import { isDemo } from "@/server/env";
+import { authMode, isDemo } from "@/server/env";
+import { SignOutButton } from "@clerk/nextjs";
 import { getPaymentProvider } from "@/server/providers";
 import { requireActor } from "@/server/session";
 import { eq } from "drizzle-orm";
@@ -44,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const [org] = actor.orgId ? await db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId)) : [];
   const items = NAV[actor.role] ?? [];
   const demo = isDemo();
+  const clerk = authMode() === "clerk";
   // The badge follows the money: shown while payouts run through a mock provider, in any environment.
   const testMode = !getPaymentProvider().isLive;
   const workspace = actor.role === "brand" ? (org?.displayName ?? "Brand") : actor.role === "creator" ? "Creator workspace" : "Platform operations";
@@ -103,7 +105,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 {actor.role === "creator" && actor.creatorProfileId && <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href={`/creators/${actor.creatorProfileId}`}><UserRound size={16} className="text-faint" aria-hidden />View public profile</Link>}
                 <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href="/settings"><Settings size={16} className="text-faint" aria-hidden />Settings &amp; appearance</Link>
                 {demo && <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href="/login"><ArrowLeftRight size={16} className="text-faint" aria-hidden />Switch demo account</Link>}
-                <form action={logout}><button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-sunken"><LogOut size={16} className="text-faint" aria-hidden />Sign out</button></form>
+                {clerk ? (
+                  <SignOutButton redirectUrl="/"><button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-sunken"><LogOut size={16} className="text-faint" aria-hidden />Sign out</button></SignOutButton>
+                ) : (
+                  <form action={logout}><button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-sunken"><LogOut size={16} className="text-faint" aria-hidden />Sign out</button></form>
+                )}
               </div>
             </details>
           </div>

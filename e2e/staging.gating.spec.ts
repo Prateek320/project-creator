@@ -14,3 +14,17 @@ test("staging shows no demo copy", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Demo build")).toHaveCount(0);
 });
+
+test("staging sends people to managed sign-in, never the demo picker", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('a[href^="/login"]')).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/sign-in");
+});
+
+test("without Clerk keys, staging fails closed: no sign-in, no onboarding, no workspace", async ({ page }) => {
+  for (const path of ["/sign-in", "/sign-up", "/onboarding", "/onboarding/brand"]) {
+    expect((await page.goto(path))?.status(), path).toBe(404);
+  }
+  await page.goto("/brand");
+  await expect(page).toHaveURL(/\/sign-in$/);
+});
