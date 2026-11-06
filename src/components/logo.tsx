@@ -1,7 +1,7 @@
 /**
  * proovd mark: a soft 8-lobe seal (verified) with the proof-arrow cut through it. The tick is the
  * proof; its long stroke becomes an arrow that breaks out of the seal (performance beyond proof).
- * The arrow carries an ink outline so it stays crisp on light, indigo and dark backgrounds.
+ * Seal in stamp violet; the arrow is white with an ink outline so it stays crisp on any background.
  * Pure SVG with no gradient/mask ids, so any number of instances can render on one page.
  */
 const SEAL = "M30.00 7.80L30.85 7.89L31.69 8.15L32.50 8.57L33.28 9.11L34.00 9.76L34.68 10.46L35.32 11.18L35.93 11.88L36.52 12.52L37.10 13.08L37.71 13.53L38.34 13.86L39.03 14.07L39.77 14.18L40.58 14.21L41.45 14.17L42.37 14.10L43.33 14.04L44.31 14.03L45.28 14.09L46.21 14.25L47.08 14.52L47.86 14.93L48.53 15.47L49.07 16.14L49.48 16.92L49.75 17.79L49.91 18.72L49.97 19.69L49.96 20.67L49.90 21.63L49.83 22.55L49.79 23.42L49.82 24.23L49.93 24.97L50.14 25.66L50.47 26.29L50.92 26.90L51.48 27.48L52.12 28.07L52.82 28.68L53.54 29.32L54.24 30.00L54.89 30.72L55.43 31.50L55.85 32.31L56.11 33.15L56.20 34.00L56.11 34.85L55.85 35.69L55.43 36.50L54.89 37.28L54.24 38.00L53.54 38.68L52.82 39.32L52.12 39.93L51.48 40.52L50.92 41.10L50.47 41.71L50.14 42.34L49.93 43.03L49.82 43.77L49.79 44.58L49.83 45.45L49.90 46.37L49.96 47.33L49.97 48.31L49.91 49.28L49.75 50.21L49.48 51.08L49.07 51.86L48.53 52.53L47.86 53.07L47.08 53.48L46.21 53.75L45.28 53.91L44.31 53.97L43.33 53.96L42.37 53.90L41.45 53.83L40.58 53.79L39.77 53.82L39.03 53.93L38.34 54.14L37.71 54.47L37.10 54.92L36.52 55.48L35.93 56.12L35.32 56.82L34.68 57.54L34.00 58.24L33.28 58.89L32.50 59.43L31.69 59.85L30.85 60.11L30.00 60.20L29.15 60.11L28.31 59.85L27.50 59.43L26.72 58.89L26.00 58.24L25.32 57.54L24.68 56.82L24.07 56.12L23.48 55.48L22.90 54.92L22.29 54.47L21.66 54.14L20.97 53.93L20.23 53.82L19.42 53.79L18.55 53.83L17.63 53.90L16.67 53.96L15.69 53.97L14.72 53.91L13.79 53.75L12.92 53.48L12.14 53.07L11.47 52.53L10.93 51.86L10.52 51.08L10.25 50.21L10.09 49.28L10.03 48.31L10.04 47.33L10.10 46.37L10.17 45.45L10.21 44.58L10.18 43.77L10.07 43.03L9.86 42.34L9.53 41.71L9.08 41.10L8.52 40.52L7.88 39.93L7.18 39.32L6.46 38.68L5.76 38.00L5.11 37.28L4.57 36.50L4.15 35.69L3.89 34.85L3.80 34.00L3.89 33.15L4.15 32.31L4.57 31.50L5.11 30.72L5.76 30.00L6.46 29.32L7.18 28.68L7.88 28.07L8.52 27.48L9.08 26.90L9.53 26.29L9.86 25.66L10.07 24.97L10.18 24.23L10.21 23.42L10.17 22.55L10.10 21.63L10.04 20.67L10.03 19.69L10.09 18.72L10.25 17.79L10.52 16.92L10.93 16.14L11.47 15.47L12.14 14.93L12.92 14.52L13.79 14.25L14.72 14.09L15.69 14.03L16.67 14.04L17.63 14.10L18.55 14.17L19.42 14.21L20.23 14.18L20.97 14.07L21.66 13.86L22.29 13.53L22.90 13.08L23.48 12.52L24.07 11.88L24.68 11.18L25.32 10.46L26.00 9.76L26.72 9.11L27.50 8.57L28.31 8.15L29.15 7.89Z";
@@ -10,10 +10,10 @@ const ARROW = "M17 35.5l8.5 8.5L52 14M40 13h12v12";
 export function LogoMark({ size = 28, title }: { size?: number; title?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" role={title ? "img" : undefined} aria-label={title} aria-hidden={title ? undefined : true} className="shrink-0">
-      <path d={SEAL} style={{ fill: "var(--logo-seal, #5048e8)" }} />
+      <path d={SEAL} style={{ fill: "var(--logo-seal, var(--color-stamp))" }} />
       <path d={SEAL} fill="none" style={{ stroke: "var(--logo-ring, #fff)" }} strokeWidth="1.4" strokeDasharray="3 5" opacity=".32" transform="translate(30 34) scale(.8) translate(-30 -34)" />
       <path d={ARROW} fill="none" style={{ stroke: "var(--logo-arrow-edge, #0f1222)" }} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={ARROW} fill="none" style={{ stroke: "var(--logo-arrow, #e3f25c)" }} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={ARROW} fill="none" style={{ stroke: "var(--logo-arrow, #ffffff)" }} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

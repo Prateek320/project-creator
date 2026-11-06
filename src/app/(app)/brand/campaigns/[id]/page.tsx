@@ -77,7 +77,7 @@ export default async function CampaignOverview({ params, searchParams }: { param
               <ul className="divide-y divide-line-2">
                 {collabs.map(({ agreement, creator, status }) => (
                   <li key={agreement.id}>
-                    <Link href={`/collaborations/${agreement.id}`} className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-white/60">
+                    <Link href={`/collaborations/${agreement.id}`} className="flex items-center gap-3 px-6 py-4 transition-colors hover:bg-sunken">
                       <Avatar name={creator.displayName} color={creator.accent} size={32} />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium">{creator.displayName}</div>

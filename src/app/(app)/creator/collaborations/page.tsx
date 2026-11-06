@@ -18,7 +18,7 @@ export default async function MyCollaborations() {
           <ul className="divide-y divide-line-2">
             {rows.map(({ agreement, campaign, status }) => (
               <li key={agreement.id}>
-                <Link href={`/collaborations/${agreement.id}`} className="flex flex-wrap items-center gap-3 px-6 py-5 transition-colors hover:bg-white/60">
+                <Link href={`/collaborations/${agreement.id}`} className="flex flex-wrap items-center gap-3 px-6 py-5 transition-colors hover:bg-sunken">
                   <div className="min-w-0 flex-1">
                     <div className="font-medium">{campaign.title}</div>
                     <div className="text-sm text-muted">{describeFormula(agreement.formulaSnapshot)}</div>

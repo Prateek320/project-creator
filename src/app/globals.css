@@ -4,52 +4,57 @@
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Design tokens. Principles (learnui.design "7 rules"):
- *  - Light comes from above: raised surfaces are lighter with a soft shadow below; inputs are sunken.
- *  - Grayscale first, one accent hue: every gray is a slightly blue-saturated slate, never pure gray.
- *  - Accent = one indigo hue at several brightness/saturation steps.
+ * Design tokens — "carbon copy & rubber stamp".
+ * proovd sells proof, so the interface borrows from Indian office paperwork: plain paper, carbon
+ * ink, and the violet rubber stamp that marks a document as checked.
+ *  - Paper and sheet: flat, cool, no gradients or blur. Hierarchy comes from rules and type.
+ *  - One accent: stamp violet. It marks verification and the single most important action.
+ *  - Money has its own voice: Archivo semi-condensed with tabular figures (`.figures`).
  */
 @theme {
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-figures: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-creator: var(--font-sans);
 
-  --color-canvas: #f3f5f9;
+  --color-canvas: #f3f4f6;
   --color-surface: #ffffff;
-  --color-sunken: rgba(255, 255, 255, 0.55);
-  --color-ink: #0f1222;
-  --color-lime: #e3f25c;
-  --color-lime-soft: #f3f9c4;
-  --color-ink-2: #2f3a55;
-  --color-muted: #66708a;
-  --color-faint: #96a0b5;
-  --color-line: rgba(15, 18, 34, 0.09);
-  --color-line-2: rgba(15, 18, 34, 0.06);
+  --color-sunken: #f7f8fa;
+  --color-ink: #181b2c;
+  --color-ink-2: #33384d;
+  --color-muted: #5b6075;
+  --color-faint: #8b90a3;
+  --color-line: #dadde4;
+  --color-line-2: #e8eaef;
 
-  --color-accent: #4f46e5;
-  --color-accent-400: #6d68f7;
-  --color-accent-600: #4038c9;
-  --color-accent-700: #352ea8;
-  --color-accent-50: #f0f1ff;
-  --color-accent-100: #e2e3ff;
-  --color-accent-200: #c9caff;
+  /* Stamp violet: the only accent. */
+  --color-stamp: #5e2b8c;
+  --color-stamp-600: #4f2277;
+  --color-stamp-400: #7b48ab;
+  --color-stamp-soft: #f1eaf8;
+  --color-stamp-line: #d9c7ea;
+  --color-accent: var(--color-stamp);
+  --color-accent-400: var(--color-stamp-400);
+  --color-accent-600: var(--color-stamp-600);
+  --color-accent-700: #43206a;
+  --color-accent-50: #f7f2fb;
+  --color-accent-100: var(--color-stamp-soft);
+  --color-accent-200: var(--color-stamp-line);
 
-  --color-good: #047857;
-  --color-good-50: #ecfdf5;
-  --color-warn: #b45309;
-  --color-warn-50: #fffbeb;
-  --color-bad: #c02626;
-  --color-bad-50: #fef2f2;
-  --color-info: #0369a1;
-  --color-info-50: #f0f9ff;
+  --color-good: #0f6e4a;
+  --color-good-50: #e8f4ee;
+  --color-warn: #965407;
+  --color-warn-50: #fbf2e3;
+  --color-bad: #b02a22;
+  --color-bad-50: #fbecea;
+  --color-info: #23557f;
+  --color-info-50: #eaf1f7;
 
-  --font-creator: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --radius-card: 16px;
+  --radius-card: 14px;
 
-  /* Raised: lighter top edge (inner highlight) + soft, slightly offset shadow below. */
-  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(14, 22, 48, 0.05), 0 2px 8px -2px rgba(14, 22, 48, 0.06);
-  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(14, 22, 48, 0.05), 0 10px 24px -8px rgba(14, 22, 48, 0.14);
-  --shadow-pop: 0 4px 8px -2px rgba(14, 22, 48, 0.08), 0 16px 32px -8px rgba(14, 22, 48, 0.18);
-  /* Sunken: inner shadow at the top edge. */
-  --shadow-inset: inset 0 1px 2px rgba(14, 22, 48, 0.06);
+  --shadow-card: 0 1px 0 rgba(24, 27, 44, 0.04);
+  --shadow-card-hover: 0 1px 0 rgba(24, 27, 44, 0.04), 0 6px 18px -10px rgba(24, 27, 44, 0.22);
+  --shadow-pop: 0 2px 6px -2px rgba(24, 27, 44, 0.12), 0 18px 40px -12px rgba(24, 27, 44, 0.28);
+  --shadow-inset: inset 0 1px 2px rgba(24, 27, 44, 0.05);
 
   --animate-rise: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-fade: fade 180ms ease-out both;
@@ -79,40 +84,41 @@
 
 
 /* ---------- Dark theme ----------
- * A near-black monochrome base (white type, white pill buttons) with proovd's colours kept as
- * accents where they carry meaning: lime for the one key action and selection, indigo for the
- * brand mark and links, and soft hue tints for status. Everything else stays neutral.
+ * Carbon paper: a blue-black sheet, light ink, and the stamp violet lifted so it reads on dark.
  */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-white: #161616;
+  --color-white: #1c1e29;
   --color-black: #ffffff;
-  --color-canvas: #0a0a0a;
-  --color-surface: #161616;
-  --color-sunken: rgba(255, 255, 255, 0.04);
-  --color-ink: #f2f2f2;
-  --color-ink-2: #cfcfcf;
-  --color-muted: #9a9a9a;
-  --color-faint: #6b6b6b;
-  --color-line: rgba(255, 255, 255, 0.1);
-  --color-line-2: rgba(255, 255, 255, 0.06);
-  --color-lime: #e3f25c;
-  --color-lime-soft: rgba(227, 242, 92, 0.12);
-  --color-accent: #a5b4fc;
-  --color-accent-400: #c7d2fe;
-  --color-accent-600: #818cf8;
-  --color-accent-700: #6366f1;
-  --color-accent-50: rgba(99, 102, 241, 0.08);
-  --color-accent-100: rgba(99, 102, 241, 0.16);
-  --color-accent-200: rgba(99, 102, 241, 0.28);
-  --color-good: #6ee7b7;
-  --color-good-50: rgba(16, 185, 129, 0.12);
-  --color-warn: #fcd34d;
-  --color-warn-50: rgba(245, 158, 11, 0.12);
-  --color-info: #7dd3fc;
-  --color-info-50: rgba(14, 165, 233, 0.12);
-  --color-bad: #fca5a5;
-  --color-bad-50: rgba(239, 68, 68, 0.12);
+  --color-canvas: #121420;
+  --color-surface: #1c1e29;
+  --color-sunken: #171925;
+  --color-ink: #eceef4;
+  --color-ink-2: #c9ccd8;
+  --color-muted: #9599ab;
+  --color-faint: #6c7084;
+  --color-line: rgba(255, 255, 255, 0.12);
+  --color-line-2: rgba(255, 255, 255, 0.07);
+  --color-stamp: #c3a0e6;
+  --color-stamp-600: #d6bdf0;
+  --color-stamp-400: #a77fd1;
+  --color-stamp-soft: rgba(195, 160, 230, 0.12);
+  --color-stamp-line: rgba(195, 160, 230, 0.32);
+  --color-accent: var(--color-stamp);
+  --color-accent-400: #d6bdf0;
+  --color-accent-600: #b48cdc;
+  --color-accent-700: #a77fd1;
+  --color-accent-50: rgba(195, 160, 230, 0.07);
+  --color-accent-100: rgba(195, 160, 230, 0.14);
+  --color-accent-200: rgba(195, 160, 230, 0.28);
+  --color-good: #7fd3ab;
+  --color-good-50: rgba(127, 211, 171, 0.12);
+  --color-warn: #f0c070;
+  --color-warn-50: rgba(240, 192, 112, 0.12);
+  --color-info: #93bfe6;
+  --color-info-50: rgba(147, 191, 230, 0.12);
+  --color-bad: #f2a29b;
+  --color-bad-50: rgba(242, 162, 155, 0.12);
   --color-green-50: rgba(34,197,94, 0.06);
   --color-green-100: rgba(34,197,94, 0.14);
   --color-green-200: rgba(34,197,94, 0.22);
@@ -293,35 +299,23 @@
   --color-slate-700: #cbd5e1;
   --color-slate-800: #e2e8f0;
   --color-slate-900: #e2e8f0;
-  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06);
-  --shadow-card-hover: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 12px 32px -12px rgba(0, 0, 0, 0.8);
-  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 48px -12px rgba(0, 0, 0, 0.9);
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.5);
-  --logo-arrow-edge: #0a0a0a;
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-card-hover: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 32px -12px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 48px -12px rgba(0, 0, 0, 0.8);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --logo-arrow-edge: #121420;
 }
-/* The light theme's pastel wash, echoed as two faint glows on black. */
-[data-theme="dark"] body {
-  background:
-    radial-gradient(60% 45% at 12% 0%, rgba(99, 102, 241, 0.11), transparent 70%),
-    radial-gradient(45% 35% at 100% 100%, rgba(227, 242, 92, 0.05), transparent 70%),
-    #0a0a0a;
-}
-/* Text on lime always reads dark. */
-[data-theme="dark"] .bg-lime { color: #0a0a0a; }
-[data-theme="dark"] .bg-lime [class*="text-"] { color: rgba(10, 10, 10, 0.6); }
-/* Primary pills invert to white; lime marks inside them turn dark. `dk-raise` opts out for
-   selected states that stay dark and keep their lime. */
-[data-theme="dark"] .bg-ink:not(.dk-raise) .text-lime,
-[data-theme="dark"] .bg-ink.text-lime:not(.dk-raise) { color: #0a0a0a; }
-[data-theme="dark"] .bg-ink:not(.dk-raise) .bg-lime { background-color: #0a0a0a; color: #e3f25c; }
+[data-theme="dark"] body { background: var(--color-canvas); }
+[data-theme="dark"] .bg-stamp { color: #1c1e29; }
+[data-theme="dark"] .bg-ink:not(.dk-raise) { color: #121420; }
 [data-theme="dark"] [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.08); }
-[data-theme="dark"] :focus-visible { outline-color: var(--color-lime); }
-[data-theme="dark"] ::selection { background: #e3f25c; color: #0a0a0a; }
+[data-theme="dark"] :focus-visible { outline-color: var(--color-stamp); }
+[data-theme="dark"] ::selection { background: var(--color-stamp); color: #121420; }
 
 html { -webkit-text-size-adjust: 100%; }
 body {
-  /* Warm-glass canvas shared by every workspace. */
-  background: linear-gradient(135deg, #dcfce7 0%, #fffbeb 50%, #dbeafe 100%) var(--color-canvas);
+  /* Flat paper. Surfaces sit on it as sheets; no gradients, no blur. */
+  background: var(--color-canvas);
   min-height: 100dvh;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
@@ -331,24 +325,70 @@ body {
 h1, h2, h3 { letter-spacing: -0.015em; }
 .tnum { font-variant-numeric: tabular-nums; }
 
-/* Small, uppercase, tracked label: pops by case and spacing, un-pops by size and color. */
+/* Money and counts: Archivo semi-condensed, tabular, lining figures. */
+.figures {
+  font-family: var(--font-figures);
+  font-stretch: 88%;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Field label: sentence case, small and muted. No caps, no tracking. */
 .eyebrow {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--color-muted);
 }
 
-:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 8px; }
-::selection { background: var(--color-lime); color: var(--color-ink); }
+/* ---------- Receipt ----------
+ * A settlement is a document. The sheet has perforated top and bottom edges, dashed rules between
+ * sections, and a rubber stamp once it has been checked.
+ */
+.receipt {
+  position: relative;
+  background: var(--color-surface);
+  --perf: radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px);
+  -webkit-mask: var(--perf) top / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) bottom / 12px 51% repeat-x;
+  mask: var(--perf) top / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) bottom / 12px 51% repeat-x;
+  filter: drop-shadow(0 1px 1px rgba(24, 27, 44, 0.06)) drop-shadow(0 8px 18px rgba(24, 27, 44, 0.06));
+}
+.rule-dash { border-top: 1.5px dashed var(--color-line); }
 
-/* Page entrance: sections rise in with a short stagger. */
-.page-enter > * { animation: var(--animate-rise); }
-.page-enter > *:nth-child(2) { animation-delay: 40ms; }
-.page-enter > *:nth-child(3) { animation-delay: 80ms; }
-.page-enter > *:nth-child(4) { animation-delay: 120ms; }
-.page-enter > *:nth-child(n + 5) { animation-delay: 160ms; }
+/* Rubber stamp: double ruled border, slight tilt, ink that doesn't quite cover. */
+.stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 16px 6px;
+  border: 3px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 6px;
+  color: var(--color-stamp);
+  font-family: var(--font-figures);
+  font-stretch: 80%;
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-6deg);
+  opacity: 0.88;
+  mix-blend-mode: multiply;
+  -webkit-mask: radial-gradient(circle at 30% 40%, #000 55%, rgba(0, 0, 0, 0.78) 70%, #000 85%);
+  mask: radial-gradient(circle at 30% 40%, #000 55%, rgba(0, 0, 0, 0.78) 70%, #000 85%);
+}
+[data-theme="dark"] .stamp { mix-blend-mode: normal; }
+@keyframes stamp-in {
+  0% { opacity: 0; transform: rotate(-6deg) scale(1.6); }
+  60% { opacity: 0.95; transform: rotate(-6deg) scale(0.96); }
+  100% { opacity: 0.88; transform: rotate(-6deg) scale(1); }
+}
+.stamp-in { animation: stamp-in 420ms cubic-bezier(0.3, 0.7, 0.3, 1) 300ms both; }
+
+:focus-visible { outline: 2px solid var(--color-stamp); outline-offset: 2px; border-radius: 8px; }
+::selection { background: var(--color-stamp-soft); color: var(--color-ink); }
+
+/* Page entrance: one quiet fade for the whole page, not a per-section cascade. */
+.page-enter { animation: var(--animate-fade); }
 
 /* Popovers built on <details> open with a short pop. */
 details[open] > :not(summary) { animation: var(--animate-pop-in); }
@@ -370,7 +410,7 @@ input[type="file"]::file-selector-button { cursor: pointer; }
 }
 /* New evidence rows: slide in and briefly glow. */
 @keyframes row-new {
-  0% { opacity: 0; transform: translateX(-6px); background-color: color-mix(in srgb, var(--color-lime) 45%, transparent); }
+  0% { opacity: 0; transform: translateX(-6px); background-color: var(--color-stamp-soft); }
   15% { opacity: 1; transform: none; }
   100% { background-color: transparent; }
 }
@@ -382,22 +422,8 @@ input[type="file"]::file-selector-button { cursor: pointer; }
 @keyframes beam-spin { to { --beam-angle: 360deg; } }
 @property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
 
-/* A slow light that travels around the one card that needs attention. */
-.beam { position: relative; isolation: isolate; }
-.beam::before {
-  content: "";
-  position: absolute;
-  inset: -1.5px;
-  z-index: -1;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(from var(--beam-angle), transparent 0 70%, color-mix(in srgb, var(--color-lime) 90%, var(--color-ink)) 82%, transparent 94%);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: beam-spin 5s linear infinite;
-  pointer-events: none;
-}
+/* The single most urgent row: a stamp-violet edge. Static; urgency shouldn't need motion. */
+.beam { position: relative; box-shadow: inset 3px 0 0 var(--color-stamp); }
 .typing-dots > span { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; animation: var(--animate-dot); }
 .typing-dots > span:nth-child(2) { animation-delay: 150ms; }
 .typing-dots > span:nth-child(3) { animation-delay: 300ms; }
@@ -412,11 +438,6 @@ input[type="file"]::file-selector-button { cursor: pointer; }
 /* Chart bars rise from the baseline, left to right. */
 @keyframes bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 .bar-grow { transform-box: fill-box; transform-origin: bottom; animation: bar-grow 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-/* Stat tiles pop in with a short stagger. */
-.tiles > * { animation: var(--animate-pop-in); }
-.tiles > *:nth-child(2) { animation-delay: 50ms; }
-.tiles > *:nth-child(3) { animation-delay: 100ms; }
-.tiles > *:nth-child(4) { animation-delay: 150ms; }
 @media (prefers-reduced-motion: reduce) {
-  .bar-grow, .tiles > * { animation: none !important; transform: none; }
+  .bar-grow { animation: none !important; transform: none; }
 }

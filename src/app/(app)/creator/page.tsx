@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { ArrowUpRight, Compass } from "lucide-react";
+import { Compass } from "lucide-react";
 import { getDb } from "@/db";
 import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
 import { EarningsPreview } from "@/components/formula";
-import { ActivityFeed, agoLabel, ContinueBlock, DashHeader, MoneyCta, Ring, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, ContinueBlock, DashHeader, MoneySummary, Ring, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
 import { Fact, QuickSheet } from "@/components/dashboard/sheet";
-import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
+import { cx, darkPill, glass, stampPill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { creatorHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
@@ -28,10 +28,10 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
   // Smart default: "Needs you", unless nothing needs the creator and something is running.
   const fallback = d.counts.action > 0 || d.counts.active === 0 ? "action" : "active";
   const views: ViewDef[] = [
-    { id: "action", label: "Needs you", icon: "zap", tint: "bg-amber-100 text-amber-700", value: String(d.counts.action), caption: d.counts.action ? "Offers and to-dos" : "All caught up" },
-    { id: "active", label: "In progress", icon: "rocket", tint: "bg-emerald-100 text-emerald-700", value: String(d.counts.active), caption: "Active collaborations" },
-    { id: "applications", label: "Applications", icon: "send", tint: "bg-sky-100 text-sky-700", value: String(d.counts.applications), caption: "Open applications" },
-    { id: "earnings", label: "Earnings", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(d.balances.creator_paid), caption: d.balances.creator_payable ? `${formatINR(d.balances.creator_payable)} on its way` : "Paid lifetime" },
+    { id: "action", label: "Needs you", icon: "zap", tint: "bg-warn-50 text-warn", value: String(d.counts.action), caption: d.counts.action ? "Offers and to-dos" : "All caught up" },
+    { id: "active", label: "In progress", icon: "rocket", tint: "bg-good-50 text-good", value: String(d.counts.active), caption: "Active collaborations" },
+    { id: "applications", label: "Applications", icon: "send", tint: "bg-info-50 text-info", value: String(d.counts.applications), caption: "Open applications" },
+    { id: "earnings", label: "Earnings", icon: "wallet", tint: "bg-good-50 text-good", value: formatINR(d.balances.creator_paid), caption: d.balances.creator_payable ? `${formatINR(d.balances.creator_payable)} on its way` : "Paid lifetime" },
   ];
   const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
   const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
@@ -94,9 +94,8 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
       <div className="space-y-6 sm:space-y-8">
         <DashHeader
           name={d.profile.displayName}
-          accent={d.profile.accent}
           greeting={greetingFor()}
-          title="Your creator dashboard"
+          title="Your work"
           search={{ action: "/creator/campaigns", placeholder: "Search campaigns, brands, niches", filtersHref: "/creator/campaigns" }}
         />
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-8">
@@ -106,7 +105,7 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
           <aside className="space-y-6">
             {d.continueCard && <ContinueBlock data={d.continueCard} />}
             {d.balances.creator_payable > 0 && (
-              <MoneyCta amountLabel={`${formatINR(d.balances.creator_payable)} on its way`} sub="Approved and queued for payout" href="/creator/earnings" cta="View earnings" />
+              <MoneySummary rows={[{ label: "On its way to you", minor: d.balances.creator_payable, hint: "Approved and queued for payout", strong: true }]} href="/creator/earnings" cta="View earnings" />
             )}
             <ActivityFeed items={activity} />
             <SideCard title="For you" href="/creator/campaigns" linkLabel="Discover">
@@ -134,7 +133,7 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
                       <EarningsPreview formula={c.formula} target={c.target} title="What you could earn" />
                     </div>
                     <Link href={`/creator/campaigns/${c.id}`} className={cx(darkPill, "mt-5 w-full")}>
-                      View brief & apply <ArrowUpRight size={16} className="text-lime" aria-hidden />
+                      View brief & apply
                     </Link>
                   </QuickSheet>
                 ))
@@ -146,13 +145,13 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
                 <div className="font-bold text-ink">Profile strength</div>
                 <p className="mt-0.5 text-sm text-muted">{d.strength >= 100 ? "Brands see your full evidence." : "Complete profiles get shortlisted more."}</p>
                 {d.strength < 100 && (
-                  <Link href="/creator/profile" className={cx(limePill, "mt-3 px-4 py-2 text-[13px]")}>
+                  <Link href="/creator/profile" className={cx(stampPill, "mt-3 px-4 py-2 text-[13px]")}>
                     Complete profile
                   </Link>
                 )}
               </div>
             </section>
-            <Link href="/creator/campaigns" className={cx(glass, "flex items-center gap-3 p-4 text-sm font-semibold text-ink transition-colors hover:bg-white/75 lg:hidden")}>
+            <Link href="/creator/campaigns" className={cx(glass, "flex items-center gap-3 p-4 text-sm font-semibold text-ink transition-colors hover:bg-sunken lg:hidden")}>
               <Compass size={18} aria-hidden /> Browse all open campaigns
             </Link>
           </aside>

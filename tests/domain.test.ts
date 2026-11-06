@@ -3,7 +3,7 @@ import { evaluateSettlement, previewEarnings, validateFormula, maxPayout } from 
 import { assertBalanced, balances, fundingLines, payoutLines, reversalLines, settlementLines } from "@/domain/ledger";
 import { assertTransition, campaignMachine, deliverableMachine, applicationMachine } from "@/domain/state";
 import { parseCsv, parseEvent, signPayload, verifySignature } from "@/domain/attribution";
-import { rupeesToMinor } from "@/domain/money";
+import { formatINR, rupeesToMinor } from "@/domain/money";
 import type { Formula, SettlementEventInput } from "@/domain/types";
 
 const start = new Date("2026-10-01T00:00:00Z");
@@ -108,6 +108,10 @@ describe("money", () => {
     expect(rupeesToMinor("0.1")).toBe(10);
     expect(rupeesToMinor("19.99")).toBe(1999);
     expect(() => rupeesToMinor("12.345")).toThrow();
+  });
+  it("never renders negative zero (sums of negated ledger lines can be -0)", () => {
+    expect(formatINR(-0)).toBe(formatINR(0));
+    expect(formatINR(-0)).not.toMatch(/^[-−]/);
   });
 });
 

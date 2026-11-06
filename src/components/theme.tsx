@@ -37,7 +37,7 @@ export function ThemeToggle() {
     apply(p);
   };
   return (
-    <div role="radiogroup" aria-label="Theme" className="inline-flex gap-1 rounded-full border border-white/70 bg-white/50 p-1 shadow-sm backdrop-blur-md dark:border-white/10">
+    <div role="radiogroup" aria-label="Theme" className="inline-flex gap-1 rounded-full border border-line bg-surface p-1 dark:border-line">
       {OPTIONS.map((o) => {
         const on = pref === o.id;
         return (
@@ -47,9 +47,9 @@ export function ThemeToggle() {
             role="radio"
             aria-checked={on}
             onClick={() => choose(o.id)}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 ${on ? "bg-ink text-white" : "text-ink-2 hover:bg-white/80 hover:text-ink"}`}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 ${on ? "bg-ink text-white" : "text-ink-2 hover:bg-sunken hover:text-ink"}`}
           >
-            <o.icon size={16} aria-hidden className={on ? "text-lime" : ""} />
+            <o.icon size={16} aria-hidden className={on ? "text-stamp-line" : ""} />
             {o.label}
           </button>
         );

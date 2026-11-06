@@ -37,13 +37,13 @@ export function Toast({ message, tone }: { message: string; tone: "good" | "bad"
         onMouseLeave={() => setPaused(false)}
         onFocus={() => setPaused(true)}
         onBlur={() => setPaused(false)}
-        className="pointer-events-auto flex w-full max-w-sm animate-toast-in items-start gap-3 rounded-2xl border border-white/70 bg-white/90 p-3.5 pr-2.5 text-sm text-ink shadow-[var(--shadow-pop)] backdrop-blur-md dark:border-white/10"
+        className="pointer-events-auto flex w-full max-w-sm animate-toast-in items-start gap-3 rounded-2xl border border-line bg-surface p-3.5 pr-2.5 text-sm text-ink shadow-[var(--shadow-pop)] dark:border-line"
       >
-        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${tone === "bad" ? "bg-rose-100 text-rose-700" : "bg-lime text-ink"}`}>
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${tone === "bad" ? "bg-bad-50 text-bad" : "bg-stamp text-white"}`}>
           <Icon size={16} aria-hidden />
         </span>
         <p className="min-w-0 flex-1 pt-1 leading-snug">{message}</p>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Dismiss" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-black/5 hover:text-ink">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Dismiss" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-sunken hover:text-ink">
           <X size={15} aria-hidden />
         </button>
       </div>

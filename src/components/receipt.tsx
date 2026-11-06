@@ -37,10 +37,10 @@ export function PayoutReceipt({ amountMinor, creator, campaign, providerRef, whe
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
-      <div aria-hidden onClick={close} className="absolute inset-0 animate-fade bg-ink/25 backdrop-blur-[2px] dark:bg-black/60" />
-      <div role="dialog" aria-modal="true" aria-labelledby="receipt-title" className="relative w-full max-w-sm animate-pop-in rounded-[28px] border border-white/70 bg-white/95 p-6 text-center shadow-[var(--shadow-pop)] backdrop-blur-md dark:border-white/10">
+      <div aria-hidden onClick={close} className="absolute inset-0 animate-fade bg-ink/25 dark:bg-black/60" />
+      <div role="dialog" aria-modal="true" aria-labelledby="receipt-title" className="relative w-full max-w-sm animate-pop-in rounded-[16px] border border-line bg-surface p-6 text-center shadow-[var(--shadow-pop)] dark:border-line">
         <svg viewBox="0 0 52 52" className="mx-auto h-14 w-14" aria-hidden>
-          <circle cx="26" cy="26" r="24" className="fill-lime" />
+          <circle cx="26" cy="26" r="24" className="fill-stamp" />
           <path d="M15 27l7 7 15-16" fill="none" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className="check-draw" style={{ stroke: "var(--color-canvas)" }} />
         </svg>
         <h2 id="receipt-title" className="mt-4 text-sm font-semibold text-muted">
@@ -64,7 +64,7 @@ export function PayoutReceipt({ amountMinor, creator, campaign, providerRef, whe
           ))}
         </ul>
         <p className="mt-3 font-mono text-[11px] text-faint">{providerRef} · test mode</p>
-        <button ref={done} type="button" onClick={close} className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-ink text-sm font-semibold text-white transition-transform duration-200 hover:-translate-y-0.5">
+        <button ref={done} type="button" onClick={close} className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-full bg-ink text-sm font-semibold text-white transition-transform duration-200">
           Done
         </button>
       </div>

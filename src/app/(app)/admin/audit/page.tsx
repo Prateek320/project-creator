@@ -14,7 +14,7 @@ export default async function Audit() {
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
-            <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-4 font-medium">When</th><th className="px-3 py-3 font-medium">Actor</th><th className="px-3 py-3 font-medium">Action</th><th className="px-3 py-3 font-medium">Entity</th><th className="px-6 py-4 font-medium">Reason / details</th></tr></thead>
+            <thead><tr className="border-b border-line text-left text-[12.5px] font-semibold text-muted"><th className="px-6 py-4 font-medium">When</th><th className="px-3 py-3 font-medium">Actor</th><th className="px-3 py-3 font-medium">Action</th><th className="px-3 py-3 font-medium">Entity</th><th className="px-6 py-4 font-medium">Reason / details</th></tr></thead>
             <tbody className="divide-y divide-line-2">
               {rows.map(({ event: e, actorName }) => (
                 <tr key={e.id} className="align-top">

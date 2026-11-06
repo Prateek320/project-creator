@@ -2,9 +2,9 @@ import { BadgeCheck } from "lucide-react";
 import { and, desc, inArray } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { acceptAgreementAction, amendAction, declineAgreementAction, reviewAction, reviewDeliverableAction, simulateAction, submitDeliverableAction } from "@/app/actions";
-import { CopyButton, SubmitButton } from "@/components/client";
+import { CopyButton, ShareButton, SubmitButton } from "@/components/client";
 import { FormulaFields } from "@/components/formula";
-import { Badge, Card, CardBody, CardHeader, Field, Flash, Notice, StatusChip, fmtDate, fmtDateTime, inputClass, relDays } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, Field, Flash, Notice, StatusChip, buttonClass, fmtDate, fmtDateTime, inputClass, relDays } from "@/components/ui";
 import { describeFormula } from "@/domain/compensation";
 import { formatINR } from "@/domain/money";
 import { MAX_REVISIONS } from "@/domain/state";
@@ -40,6 +40,14 @@ const EVIDENCE: Record<string, string> = {
   reviewed: "Published to the creator's profile",
 };
 
+/** Audit actions grouped into the four phases a collaboration moves through. */
+const PHASES = [
+  { id: "agreed", label: "Agreed", match: (a: string) => a === "offered" || a === "active" || a.startsWith("accepted") || a.startsWith("amendment") || a === "withdrawn" },
+  { id: "delivered", label: "Delivered", match: (a: string) => ["submitted", "resubmitted", "approved", "changes_requested", "rejected"].includes(a) },
+  { id: "settled", label: "Settled", match: (a: string) => a.startsWith("settlement") || a.startsWith("dispute") },
+  { id: "paid", label: "Paid and closed", match: (a: string) => a.startsWith("payout") || a === "completed" || a === "reviewed" },
+] as const;
+
 export default async function Workspace({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string>> }) {
   const actor = await requireActor();
   const { id } = await params;
@@ -61,12 +69,48 @@ export default async function Workspace({ params, searchParams }: { params: Prom
   const iMustAccept = pending && ((c.side === "creator" && !pending.acceptedByCreatorAt) || (c.side === "brand" && !pending.acceptedByBrandAt));
   const isLive = c.active && (c.active.status === "accepted" || c.active.status === "disputed");
 
+  const trackingCard = (
+            <Card>
+              <CardHeader title={c.side === "creator" ? "Your link and code" : "Tracking"} description={c.side === "creator" ? "Every signup through these counts toward your pay." : "Outcomes are attributed to the creator through these."} />
+              <CardBody className="space-y-3 text-sm">
+                {c.side === "creator" && isLive && <ShareButton path={trackedPath} text={`${c.campaign.title}: use code ${terms.couponCode}`} className="w-full sm:w-auto" />}
+                <div>
+                  <div className="text-xs text-muted">Tracked link</div>
+                  <div className="mt-1 flex items-center gap-2"><code className="figures min-w-0 flex-1 truncate rounded-md bg-sunken px-2.5 py-1.5 text-[13px]">{trackedPath}</code><CopyButton value={trackedPath} absolute /></div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted">Coupon code</div>
+                  <div className="mt-1 flex items-center gap-2"><code className="figures rounded-md border border-dashed border-stamp-line bg-stamp-soft px-2.5 py-1 text-[15px] font-bold tracking-[0.04em] text-stamp">{terms.couponCode}</code><CopyButton value={terms.couponCode} /></div>
+                </div>
+                {c.side === "brand" && isLive && (
+                  <form action={simulateAction} className="space-y-2 border-t border-line-2 pt-3">
+                    <input type="hidden" name="agreementId" value={c.root.id} />
+                    <input type="hidden" name="back" value={back} />
+                    <div className="text-xs font-medium text-ink-2">Demo: simulate your backend webhook</div>
+                    <div className="flex gap-2">
+                      <input name="count" defaultValue="10" inputMode="numeric" aria-label="Number of conversions" className={`${inputClass} w-20`} />
+                      <SubmitButton variant="secondary" size="md">Send {terms.formulaSnapshot.outcomeEvent ?? "signup"}s</SubmitButton>
+                    </div>
+                    <p className="text-xs text-muted">Goes through the same ingest path as a signed webhook, including one replayed event to show deduplication.</p>
+                  </form>
+                )}
+              </CardBody>
+            </Card>
+  );
+
+  // Activity, grouped into phases. The latest phase is open; earlier ones collapse to one line.
+  const phased: { id: string; label: string; events: typeof timeline }[] = PHASES.map((p) => ({ id: p.id as string, label: p.label as string, events: timeline.filter((e) => p.match(e.action)) })).filter((p) => p.events.length);
+  const other = timeline.filter((e) => !PHASES.some((p) => p.match(e.action)));
+  if (other.length) phased.push({ id: "other", label: "Other", events: other });
+  // Phases are sequential, so the furthest one reached is the current one (timestamps can tie).
+  const latestPhase = phased.filter((p) => p.id !== "other").at(-1)?.id ?? phased[0]?.id;
+
   return (
     <>
       <Flash sp={sp} />
 
       {pending && (
-        <Card className={`mb-6 ${iMustAccept ? "border-amber-300" : ""}`}>
+        <Card className={`mb-6 ${iMustAccept ? "border-stamp-line" : ""}`}>
           <CardHeader
             title={pending.version === 1 ? "Offer" : `Proposed amendment · v${pending.version}`}
             description={pending.changeSummary ?? undefined}
@@ -105,7 +149,7 @@ export default async function Workspace({ params, searchParams }: { params: Prom
                   <SubmitButton variant="success" pendingLabel="Accepting…">{pending.version === 1 ? "Accept agreement" : "Accept amendment"}</SubmitButton>
                 </form>
                 <details>
-                  <summary className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold shadow-sm">Decline…</summary>
+                  <summary className="inline-flex h-11 items-center rounded-full border border-line bg-surface px-5 text-sm font-semibold">Decline…</summary>
                   <form action={declineAgreementAction} className="mt-2 flex gap-2">
                     <input type="hidden" name="agreementId" value={pending.id} />
                     <input type="hidden" name="back" value={back} />
@@ -128,6 +172,7 @@ export default async function Workspace({ params, searchParams }: { params: Prom
 
       <div className="grid gap-8 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="min-w-0 space-y-8">
+          {c.active && c.side === "creator" && trackingCard}
           <Card id="deliverables">
             <CardHeader title="Deliverables" description={c.deliverables.length ? `${c.deliverables.filter((d) => d.approvalState === "approved").length} of ${c.deliverables.length} approved` : undefined} />
             {c.deliverables.length === 0 ? (
@@ -142,14 +187,14 @@ export default async function Workspace({ params, searchParams }: { params: Prom
                     <li key={d.id} className="px-6 py-5">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div>
-                          <div className="font-medium">{d.title} <span className="font-normal text-muted">· {d.channel}</span></div>
+                          <div className="font-medium">{d.title} <span className="font-normal text-muted">on {d.channel}</span></div>
                           <div className={`text-xs ${overdue ? "text-bad" : "text-muted"}`}>Due {fmtDate(d.dueAt)} ({relDays(d.dueAt)}){d.revisionCount ? ` · revision ${d.revisionCount}/${MAX_REVISIONS}` : ""}</div>
                         </div>
                         <StatusChip status={d.approvalState} />
                       </div>
-                      {d.submittedUrl && <a href={d.submittedUrl} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-block break-all text-sm text-accent hover:underline">{d.submittedUrl} ↗</a>}
+                      {d.submittedUrl && <a href={d.submittedUrl} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 inline-block max-w-full truncate text-sm text-stamp hover:underline">View post on {d.channel} ↗</a>}
                       {d.notes && <p className="mt-1 text-sm text-muted">Creator note: {d.notes}</p>}
-                      {d.feedback && <p className="mt-1 rounded-lg bg-warn-50 px-3 py-2 text-sm text-amber-900">Brand feedback: {d.feedback}</p>}
+                      {d.feedback && <p className="mt-2 rounded-lg border border-warn/25 bg-warn-50 px-3 py-2 text-sm text-ink">Brand feedback: {d.feedback}</p>}
                       {creatorCanSubmit && (
                         <form action={submitDeliverableAction} className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                           <input type="hidden" name="deliverableId" value={d.id} />
@@ -205,52 +250,24 @@ export default async function Workspace({ params, searchParams }: { params: Prom
                   </ul>
                 </details>
               )}
+              {isLive && !pending && c.side !== "admin" && (
+                <details className="border-t border-line-2 pt-3">
+                  <summary className={`${buttonClass("secondary", "sm")} w-full`}>Propose a change</summary>
+                  <form action={amendAction} className="mt-4 space-y-4">
+                    <input type="hidden" name="agreementId" value={c.root.id} />
+                    <input type="hidden" name="back" value={back} />
+                    <Field label="What's changing and why" htmlFor="summary"><input id="summary" name="summary" required className={inputClass} placeholder="e.g. Extend deadlines by 3 days after shipping delay" /></Field>
+                    <Field label="Shift unapproved due dates by (days)" htmlFor="shiftDueDays"><input id="shiftDueDays" name="shiftDueDays" defaultValue="0" inputMode="numeric" className={inputClass} /></Field>
+                    <FormulaFields initial={c.active!.formulaSnapshot} compact />
+                    <SubmitButton>Propose amendment</SubmitButton>
+                    <p className="text-xs text-muted">Current terms stay in force until both sides accept.</p>
+                  </form>
+                </details>
+              )}
             </CardBody>
           </Card>
 
-          {c.active && (
-            <Card>
-              <CardHeader title="Tracking" description="Share these — outcomes are attributed to you through them." />
-              <CardBody className="space-y-3 text-sm">
-                <div>
-                  <div className="text-xs text-muted">Tracked link</div>
-                  <div className="mt-1 flex items-center gap-2"><code className="min-w-0 flex-1 truncate rounded bg-black/5 px-2 py-1 text-xs">{trackedPath}</code><CopyButton value={trackedPath} absolute /></div>
-                </div>
-                <div>
-                  <div className="text-xs text-muted">Coupon code</div>
-                  <div className="mt-1 flex items-center gap-2"><code className="rounded bg-black/5 px-2 py-1 font-semibold">{terms.couponCode}</code><CopyButton value={terms.couponCode} /></div>
-                </div>
-                {c.side === "brand" && isLive && (
-                  <form action={simulateAction} className="space-y-2 border-t border-line-2 pt-3">
-                    <input type="hidden" name="agreementId" value={c.root.id} />
-                    <input type="hidden" name="back" value={back} />
-                    <div className="text-xs font-medium text-ink-2">Demo: simulate your backend webhook</div>
-                    <div className="flex gap-2">
-                      <input name="count" defaultValue="10" inputMode="numeric" aria-label="Number of conversions" className={`${inputClass} w-20`} />
-                      <SubmitButton variant="secondary" size="md">Send {terms.formulaSnapshot.outcomeEvent ?? "signup"}s</SubmitButton>
-                    </div>
-                    <p className="text-xs text-muted">Goes through the same ingest path as a signed webhook, including one replayed event to show deduplication.</p>
-                  </form>
-                )}
-              </CardBody>
-            </Card>
-          )}
-
-          {isLive && !pending && c.side !== "admin" && (
-            <Card>
-              <details>
-                <summary className="px-6 py-5 text-sm font-semibold">Propose a change to the terms</summary>
-                <form action={amendAction} className="space-y-4 px-6 pb-6">
-                  <input type="hidden" name="agreementId" value={c.root.id} />
-                  <input type="hidden" name="back" value={back} />
-                  <Field label="What's changing and why" htmlFor="summary"><input id="summary" name="summary" required className={inputClass} placeholder="e.g. Extend deadlines by 3 days after shipping delay" /></Field>
-                  <Field label="Shift unapproved due dates by (days)" htmlFor="shiftDueDays"><input id="shiftDueDays" name="shiftDueDays" defaultValue="0" inputMode="numeric" className={inputClass} /></Field>
-                  <FormulaFields initial={c.active!.formulaSnapshot} compact />
-                  <SubmitButton>Propose amendment</SubmitButton>
-                </form>
-              </details>
-            </Card>
-          )}
+          {c.active && c.side !== "creator" && trackingCard}
 
           {c.side === "brand" && c.active?.status === "completed" && !review && (
             <Card>
@@ -275,21 +292,35 @@ export default async function Workspace({ params, searchParams }: { params: Prom
         </div>
         <div className="min-w-0 lg:col-start-1">
             <Card>
-              <CardHeader title="Activity" description="Immutable audit trail for this collaboration" />
-              <ol className="relative space-y-0 px-6 py-5">
-                {timeline.map((e, i) => (
-                  <li key={e.id} className="relative animate-pop-in border-l border-line pb-4 pl-5 last:pb-0" style={{ animationDelay: `${Math.min(i, 10) * 45}ms` }}>
-                    <span aria-hidden className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white ${i === 0 ? "bg-ink" : "bg-black/25"}`} />
-                    <div className="text-sm"><span className="capitalize">{e.action.replace(/_/g, " ")}</span> <span className="text-muted">· {c.deliverables.find((d) => d.id === e.entityId)?.title ?? (e.entityType === "agreement" ? `agreement v${c.versions.find((v) => v.id === e.entityId)?.version ?? ""}` : e.entityType)}</span></div>
-                    <div className="text-xs text-muted">{fmtDateTime(e.createdAt)}{e.reason ? ` · “${e.reason}”` : ""}</div>
-                    {EVIDENCE[e.action] && (
-                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold text-ink-2">
-                        <BadgeCheck size={12} aria-hidden /> {EVIDENCE[e.action]}
-                      </div>
-                    )}
-                  </li>
+              <CardHeader title="Activity" description="Append-only record of every step. Nothing here can be edited." />
+              <div className="divide-y divide-line-2">
+                {phased.map((p) => (
+                  <details key={p.id} open={p.id === latestPhase} className="group">
+                    <summary className="flex items-center justify-between gap-3 px-6 py-3.5 hover:bg-sunken">
+                      <span className="flex items-center gap-2.5">
+                        <span aria-hidden className="text-faint transition-transform group-open:rotate-90">›</span>
+                        <span className="text-sm font-semibold text-ink">{p.label}</span>
+                        <span className="tnum text-xs text-muted">{p.events.length} {p.events.length === 1 ? "step" : "steps"}</span>
+                      </span>
+                      <span className="text-xs text-muted">{fmtDateTime(p.events[0]!.createdAt)}</span>
+                    </summary>
+                    <ol className="px-6 pb-4 pl-11">
+                      {p.events.map((e) => (
+                        <li key={e.id} className="relative border-l border-line pb-3 pl-4 last:pb-0">
+                          <span aria-hidden className="absolute -left-[4px] top-1.5 h-2 w-2 rounded-full bg-line" />
+                          <div className="text-sm"><span className="capitalize">{e.action.replace(/_/g, " ")}</span> <span className="text-muted">— {c.deliverables.find((d) => d.id === e.entityId)?.title ?? (e.entityType === "agreement" ? `agreement v${c.versions.find((v) => v.id === e.entityId)?.version ?? ""}` : e.entityType)}</span></div>
+                          <div className="text-xs text-muted">{fmtDateTime(e.createdAt)}{e.reason ? ` · “${e.reason}”` : ""}</div>
+                          {EVIDENCE[e.action] && (
+                            <div className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-medium text-good">
+                              <BadgeCheck size={13} aria-hidden /> {EVIDENCE[e.action]}
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </details>
                 ))}
-              </ol>
+              </div>
             </Card>
         </div>
       </div>

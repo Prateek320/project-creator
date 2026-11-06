@@ -18,7 +18,8 @@ const inr = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR",
 const inrPaise = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 });
 
 export function formatINR(minor: number, opts: { paise?: boolean } = {}): string {
-  const rupees = minor / 100; // display only
+  // `|| 0` folds -0 into 0: sums of negated ledger lines can produce -0, which Intl renders "-₹0".
+  const rupees = (minor || 0) / 100; // display only
   return opts.paise || minor % 100 !== 0 ? inrPaise.format(rupees) : inr.format(rupees);
 }
 

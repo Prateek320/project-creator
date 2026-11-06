@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/archivo/standard.css";
 import "./globals.css";
 import { THEME_SCRIPT } from "@/components/theme-script";
 
@@ -9,8 +10,8 @@ export const metadata: Metadata = {
 };
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f0fdf4" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f4f6" },
+    { media: "(prefers-color-scheme: dark)", color: "#121420" },
   ],
   width: "device-width",
   initialScale: 1,

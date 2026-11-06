@@ -51,3 +51,33 @@ export function CopyButton({ value, label = "Copy", absolute = false }: { value:
     </button>
   );
 }
+
+/**
+ * Share a tracked link: the native share sheet on phones (Instagram, WhatsApp…), copy elsewhere.
+ * The link is the creator's daily tool, so it gets one obvious action.
+ */
+export function ShareButton({ path, text, className }: { path: string; text: string; className?: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button
+      type="button"
+      className={cx(buttonClass("success", "md"), className)}
+      onClick={async () => {
+        const url = `${window.location.origin}${path}`;
+        try {
+          if (navigator.share) {
+            await navigator.share({ url, text });
+            return;
+          }
+          await navigator.clipboard.writeText(url);
+          setDone(true);
+          setTimeout(() => setDone(false), 1500);
+        } catch {
+          /* share cancelled or clipboard blocked: the link stays visible to copy by hand */
+        }
+      }}
+    >
+      {done ? "Link copied" : "Share link"}
+    </button>
+  );
+}

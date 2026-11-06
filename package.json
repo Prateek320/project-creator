@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.8",
+    "@fontsource-variable/archivo": "^5.2.8",
     "@fontsource-variable/figtree": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "drizzle-orm": "^0.44.5",

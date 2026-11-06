@@ -28,57 +28,59 @@ import { formatINR } from "@/domain/money";
 import { cx, darkPill, glass, glassRow } from "./styles";
 import type { ChipDef, DashRow } from "./types";
 
+// Row icons are neutral; colour is reserved for status (and red for things that are going wrong).
+const N = "bg-sunken text-ink-2";
 const KIND: Record<string, { icon: LucideIcon; tint: string }> = {
-  offer: { icon: FilePenLine, tint: "bg-amber-100 text-amber-700" },
-  todo: { icon: Clapperboard, tint: "bg-violet-100 text-violet-700" },
-  review: { icon: Eye, tint: "bg-violet-100 text-violet-700" },
-  collab: { icon: Handshake, tint: "bg-emerald-100 text-emerald-700" },
-  application: { icon: Send, tint: "bg-sky-100 text-sky-700" },
-  applicant: { icon: UserRound, tint: "bg-sky-100 text-sky-700" },
-  earning: { icon: IndianRupee, tint: "bg-lime-100 text-lime-700" },
-  settle: { icon: HandCoins, tint: "bg-lime-100 text-lime-700" },
-  campaign: { icon: Megaphone, tint: "bg-indigo-100 text-indigo-700" },
-  ledger: { icon: Landmark, tint: "bg-lime-100 text-lime-700" },
-  dispute: { icon: Scale, tint: "bg-rose-100 text-rose-700" },
-  event: { icon: Filter, tint: "bg-amber-100 text-amber-700" },
-  verify: { icon: ShieldCheck, tint: "bg-emerald-100 text-emerald-700" },
-  transfer: { icon: TriangleAlert, tint: "bg-rose-100 text-rose-700" },
-  verified: { icon: BadgeCheck, tint: "bg-emerald-100 text-emerald-700" },
+  offer: { icon: FilePenLine, tint: N },
+  todo: { icon: Clapperboard, tint: N },
+  review: { icon: Eye, tint: N },
+  collab: { icon: Handshake, tint: N },
+  application: { icon: Send, tint: N },
+  applicant: { icon: UserRound, tint: N },
+  earning: { icon: IndianRupee, tint: N },
+  settle: { icon: HandCoins, tint: N },
+  campaign: { icon: Megaphone, tint: N },
+  ledger: { icon: Landmark, tint: N },
+  dispute: { icon: Scale, tint: "bg-bad-50 text-bad" },
+  event: { icon: Filter, tint: N },
+  verify: { icon: ShieldCheck, tint: N },
+  transfer: { icon: TriangleAlert, tint: "bg-bad-50 text-bad" },
+  verified: { icon: BadgeCheck, tint: N },
 };
 
-const NEUTRAL = "bg-black/5 text-muted";
+const NEUTRAL = "bg-sunken text-muted";
 const STATUS: Record<string, [string, string]> = {
-  offered: ["Offer", "bg-amber-100 text-amber-800"],
-  pending: ["To do", "bg-white text-ink-2 ring-1 ring-black/5"],
-  changes_requested: ["Fix", "bg-rose-100 text-rose-700"],
-  accepted: ["Active", "bg-emerald-100 text-emerald-800"],
-  disputed: ["In dispute", "bg-rose-100 text-rose-700"],
-  submitted: ["Submitted", "bg-sky-100 text-sky-800"],
-  resubmitted: ["Resubmitted", "bg-sky-100 text-sky-800"],
-  shortlisted: ["Shortlisted", "bg-indigo-100 text-indigo-700"],
+  offered: ["Offer", "bg-warn-50 text-warn"],
+  pending: ["To do", "bg-surface text-ink-2 ring-1 ring-line"],
+  changes_requested: ["Fix", "bg-bad-50 text-bad"],
+  accepted: ["Active", "bg-good-50 text-good"],
+  disputed: ["In dispute", "bg-bad-50 text-bad"],
+  submitted: ["Submitted", "bg-info-50 text-info"],
+  resubmitted: ["Resubmitted", "bg-info-50 text-info"],
+  shortlisted: ["Shortlisted", "bg-stamp-soft text-stamp"],
   rejected: ["Declined", NEUTRAL],
   withdrawn: ["Withdrawn", NEUTRAL],
   expired: ["Closed", NEUTRAL],
-  paid: ["Paid", "bg-emerald-100 text-emerald-800"],
-  approved: ["On its way", "bg-lime-100 text-lime-800"],
-  approve: ["To approve", "bg-amber-100 text-amber-800"],
-  payout: ["To pay", "bg-lime-100 text-lime-800"],
-  review: ["Review", "bg-violet-100 text-violet-700"],
-  published: ["Live", "bg-emerald-100 text-emerald-800"],
+  paid: ["Paid", "bg-good-50 text-good"],
+  approved: ["On its way", "bg-good-50 text-good"],
+  approve: ["To approve", "bg-warn-50 text-warn"],
+  payout: ["To pay", "bg-good-50 text-good"],
+  review: ["Review", "bg-stamp-soft text-stamp"],
+  published: ["Live", "bg-good-50 text-good"],
   draft: ["Draft", NEUTRAL],
-  paused: ["Paused", "bg-amber-100 text-amber-800"],
-  completed: ["Completed", "bg-sky-100 text-sky-800"],
+  paused: ["Paused", "bg-warn-50 text-warn"],
+  completed: ["Completed", "bg-info-50 text-info"],
   cancelled: ["Cancelled", NEUTRAL],
-  funding: ["Funded", "bg-indigo-100 text-indigo-700"],
-  settlement: ["Approved", "bg-lime-100 text-lime-800"],
-  payout_done: ["Paid out", "bg-emerald-100 text-emerald-800"],
+  funding: ["Funded", "bg-stamp-soft text-stamp"],
+  settlement: ["Approved", "bg-good-50 text-good"],
+  payout_done: ["Paid out", "bg-good-50 text-good"],
   refund: ["Refunded", NEUTRAL],
-  open: ["Open", "bg-rose-100 text-rose-700"],
-  under_review: ["Under review", "bg-amber-100 text-amber-800"],
-  invalid: ["Excluded", "bg-rose-100 text-rose-700"],
-  out_of_window: ["Outside window", "bg-amber-100 text-amber-800"],
-  verify_pending: ["Pending", "bg-amber-100 text-amber-800"],
-  failed: ["Failed", "bg-rose-100 text-rose-700"],
+  open: ["Open", "bg-bad-50 text-bad"],
+  under_review: ["Under review", "bg-warn-50 text-warn"],
+  invalid: ["Excluded", "bg-bad-50 text-bad"],
+  out_of_window: ["Outside window", "bg-warn-50 text-warn"],
+  verify_pending: ["Pending", "bg-warn-50 text-warn"],
+  failed: ["Failed", "bg-bad-50 text-bad"],
 };
 
 /** Panel with heading, filter chips and rows. Chip choice is mirrored to ?chip=. */
@@ -140,12 +142,12 @@ export function FilteredList({
                 onClick={() => setChip(c.id)}
                 aria-pressed={on}
                 className={cx(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-semibold transition-all duration-200",
-                  on ? "bg-lime text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]" : "border border-black/[0.06] bg-white/70 text-ink-2 hover:bg-white",
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors duration-150",
+                  on ? "bg-ink text-white" : "border border-line bg-surface text-ink-2 hover:bg-sunken",
                 )}
               >
                 {c.label}
-                <span className={cx("tabular-nums", on ? "text-ink/70" : "text-faint")}>{count(c.id)}</span>
+                <span className={cx("tabular-nums", on ? "text-white/60" : "text-faint")}>{count(c.id)}</span>
               </button>
             );
           })}
@@ -153,8 +155,8 @@ export function FilteredList({
       )}
       <ul key={chip} className="mt-4 space-y-2.5" aria-live="polite">
         {shown.length === 0 ? (
-          <li className="animate-rise rounded-2xl border border-dashed border-black/10 bg-white/40 px-6 py-10 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-lime text-ink">
+          <li className="rounded-xl border border-dashed border-line bg-sunken px-6 py-10 text-center">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full border border-line bg-surface text-muted">
               <Sparkles size={20} aria-hidden />
             </div>
             <div className="mt-3 font-bold text-ink">{emptyTitle}</div>
@@ -166,37 +168,37 @@ export function FilteredList({
             )}
           </li>
         ) : (
-          shown.map((r, i) => <Row key={r.id} row={r} delay={Math.min(i, 8) * 35} beam={beamFirst && chip === "all" && i === 0} />)
+          shown.map((r, i) => <Row key={r.id} row={r} beam={beamFirst && chip === "all" && i === 0} />)
         )}
       </ul>
     </section>
   );
 }
 
-function Row({ row, delay, beam }: { row: DashRow; delay: number; beam?: boolean }) {
+function Row({ row, beam }: { row: DashRow; beam?: boolean }) {
   const k = KIND[row.kind] ?? KIND.campaign!;
   const [label, cls] = STATUS[row.status] ?? [row.status.replace(/_/g, " "), NEUTRAL];
   const due = row.due;
-  const dueCls = due?.tone === "late" ? "bg-rose-100 text-rose-700" : due?.tone === "soon" ? "bg-amber-100 text-amber-800" : "bg-black/5 text-muted";
+  const dueCls = due?.tone === "late" ? "bg-bad-50 text-bad" : due?.tone === "soon" ? "bg-warn-50 text-warn" : "bg-sunken text-muted";
   return (
-    <li className="animate-rise" style={{ animationDelay: `${delay}ms` }}>
+    <li>
       <Link href={row.href} className={cx(glassRow, "group flex items-center gap-3 p-3 sm:p-3.5", beam && "beam")}>
-        <span className={cx("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", k.tint)}>
+        <span className={cx("grid h-10 w-10 shrink-0 place-items-center rounded-xl", k.tint)}>
           <k.icon size={19} strokeWidth={2} aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[15px] font-bold text-ink">{row.title}</span>
-            <span className={cx("hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline", cls)}>{label}</span>
+            <span className="truncate text-[15px] font-semibold text-ink">{row.title}</span>
+            <span className={cx("hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline", cls)}>{label}</span>
           </div>
           <div className="truncate text-[13px] text-muted">
             {row.context && <span className="font-semibold text-ink-2">{row.context} · </span>}
             {row.subtitle}
           </div>
-          {due && <div className={cx("mt-1 text-[11px] font-bold sm:hidden", due.tone === "late" ? "text-rose-700" : due.tone === "soon" ? "text-amber-700" : "text-muted")}>{due.text}</div>}
+          {due && <div className={cx("mt-1 text-[11px] font-bold sm:hidden", due.tone === "late" ? "text-bad" : due.tone === "soon" ? "text-warn" : "text-muted")}>{due.text}</div>}
           {row.progress && row.progress.total > 0 && (
             <div className="mt-2 flex items-center gap-2">
-              <div className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-black/[0.07]">
+              <div className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-line-2">
                 <div className="h-full rounded-full bg-ink" style={{ width: `${Math.min(100, (row.progress.done / row.progress.total) * 100)}%` }} />
               </div>
               <span className="text-[11px] font-bold tabular-nums text-muted">
@@ -206,7 +208,7 @@ function Row({ row, delay, beam }: { row: DashRow; delay: number; beam?: boolean
           )}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
-          {row.amountMinor !== undefined && <span className="text-[15px] font-extrabold tabular-nums text-ink">{formatINR(row.amountMinor)}</span>}
+          {row.amountMinor !== undefined && <span className="figures text-[16px] font-bold text-ink">{formatINR(row.amountMinor)}</span>}
           {due && (
             <span className={cx("hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold sm:inline-flex", dueCls)}>
               <CalendarClock size={11} aria-hidden />
@@ -215,7 +217,7 @@ function Row({ row, delay, beam }: { row: DashRow; delay: number; beam?: boolean
           )}
           {!due && row.amountLabel && <span className="text-[11px] font-medium text-muted">{row.amountLabel}</span>}
         </div>
-        <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.05] text-ink-2 transition-colors group-hover:bg-ink group-hover:text-white sm:grid">
+        <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-full text-faint transition-colors group-hover:text-ink sm:grid">
           <ChevronRight size={16} aria-hidden />
         </span>
       </Link>

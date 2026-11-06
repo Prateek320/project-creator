@@ -77,16 +77,16 @@ export function DealFlow() {
   const doing = paid ? null : STEPS[Math.min(step, STEPS.length - 1)]!.doing;
 
   return (
-    <div ref={ref} className="rounded-[28px] border border-white/70 bg-white/60 p-5 shadow-sm backdrop-blur-md dark:border-white/10 sm:p-6" aria-label="Example deal from brief to payout">
+    <div ref={ref} className="rounded-[16px] border border-line bg-surface p-5 dark:border-line sm:p-6" aria-label="Example deal from brief to payout">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-indigo-100 text-indigo-700"><Building2 size={17} aria-hidden /></span>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stamp-soft text-stamp"><Building2 size={17} aria-hidden /></span>
           <div className="min-w-0">
             <div className="truncate text-sm font-bold text-ink">Glow Botanics × Meera Iyer</div>
             <div className="text-xs text-muted">Hybrid · Monsoon Glow Serum launch</div>
           </div>
         </div>
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors duration-300 ${paid ? "bg-lime text-ink" : "bg-black/5 text-ink-2"}`} aria-live="polite">
+        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-colors duration-300 ${paid ? "bg-stamp text-white" : "bg-black/5 text-ink-2"}`} aria-live="polite">
           {paid ? <><Check size={12} aria-hidden /> Paid</> : <><TypingDots /> {doing}</>}
         </span>
       </div>
@@ -96,8 +96,8 @@ export function DealFlow() {
           const done = step > i;
           const active = step === i;
           return (
-            <li key={s.title} className={`flex items-center gap-3 rounded-2xl px-2.5 py-2 transition-all duration-500 ${active ? "bg-white shadow-sm" : ""} ${done || active ? "opacity-100" : "opacity-40"}`}>
-              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-500 ${done ? "dk-raise bg-ink text-lime dark:bg-[#232323]" : active ? "bg-lime text-ink" : "bg-black/5 text-muted"}`}>
+            <li key={s.title} className={`flex items-center gap-3 rounded-2xl px-2.5 py-2 transition-all duration-500 ${active ? "bg-white" : ""} ${done || active ? "opacity-100" : "opacity-40"}`}>
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-colors duration-500 ${done ? "dk-raise bg-ink text-stamp-line dark:bg-[#232323]" : active ? "bg-stamp text-white" : "bg-black/5 text-muted"}`}>
                 {done ? <Check size={15} aria-hidden /> : <s.icon size={15} aria-hidden />}
               </span>
               <div className="min-w-0 flex-1">
@@ -122,7 +122,7 @@ export function DealFlow() {
         </div>
         {paid && (
           <svg viewBox="0 0 52 52" className="h-11 w-11 shrink-0" aria-hidden>
-            <circle cx="26" cy="26" r="24" className="fill-lime" />
+            <circle cx="26" cy="26" r="24" className="fill-stamp" />
             <path d="M15 27l7 7 15-16" fill="none" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" className="check-draw" style={{ stroke: "var(--color-canvas)" }} />
           </svg>
         )}
@@ -179,7 +179,7 @@ export function RoleShowcase() {
               aria-selected={on}
               aria-controls="role-panel"
               onClick={() => setRole(k)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${on ? "bg-lime text-ink" : "border border-black/[0.06] bg-white/70 text-ink-2 hover:bg-white"}`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200 ${on ? "bg-stamp text-white" : "border border-black/[0.06] bg-surface text-ink-2 hover:bg-white"}`}
             >
               {ROLES[k].label}
             </button>
@@ -190,7 +190,7 @@ export function RoleShowcase() {
         <p className="text-[15px] leading-relaxed text-muted">{r.lede}</p>
         <ul className="mt-4 space-y-2.5">
           {r.rows.map(([t, s, chip], i) => (
-            <li key={t} className="flex animate-rise items-center gap-3 rounded-2xl border border-white/70 bg-white/75 p-3 dark:border-white/10" style={{ animationDelay: `${80 + i * 70}ms` }}>
+            <li key={t} className="flex animate-rise items-center gap-3 rounded-2xl border border-line bg-surface p-3 dark:border-line" style={{ animationDelay: `${80 + i * 70}ms` }}>
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-black/5 text-ink-2">{i === 2 ? <IndianRupee size={17} aria-hidden /> : i === 1 ? <ShieldCheck size={17} aria-hidden /> : <Sparkles size={17} aria-hidden />}</span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-bold text-ink">{t}</span>
