@@ -100,6 +100,11 @@ passed end to end in staging (sandbox providers) and then once in production wit
 
 ### Phase 0 — Foundations (≈ 2–3 weeks) · no external money, no social APIs
 
+> **Progress (2026-11-06).** Split into two slices.
+> **Slice 1, hardening: done** (branch `phase0-hardening`). `APP_ENV` gating (items 1), migrations out of boot (2), jobs + outbox with payouts and funding moved onto it (4), encrypted webhook secrets with rotation, Postgres rate limiter, health check, report-only CSP and HSTS (6), and CI with Playwright (8).
+> Also fixed from §2 "Gaps found in the code": seed on empty DB, migrations on cold start, payout/funding ordering, plaintext webhook secret, per-process rate limiter, ungated demo actions, no CI.
+> **Slice 2, needs accounts: next.** Clerk auth with org roles and MFA (3), Resend via the outbox (5), Sentry and uptime check (6), DPDP consent and data requests (7), Neon + Vercel staging deploy and restore drill (2). The exit test below runs after slice 2.
+
 Goal: real people can sign in and run a deal on a real database, safely.
 
 1. **Environments**: `demo` (mock, seeded, nightly reset), `staging` (sandbox providers), `production`. `APP_ENV` gates seed, demo login, reset and simulator.

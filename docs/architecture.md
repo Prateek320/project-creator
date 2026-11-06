@@ -152,6 +152,14 @@ flowchart LR
 - **Why:** seed currently runs on any empty DB and demo actions are always registered.
 - **Tradeoff:** three environments to keep in sync (one codebase, env vars only).
 - **Revisit when:** never.
+- **Status (2026-11-06):** implemented in `src/server/env.ts`. `APP_ENV` defaults to `demo` only for zero-setup local runs (no `DATABASE_URL`, not a production build); everywhere else it must be set. Migrations run from `npm run db:migrate`, never at boot against Postgres.
+
+### ADR-007: Jobs table contract
+- **Choice:** one `jobs` table is both queue and outbox. Services call `enqueue(tx, kind, payload, { key })` inside the transaction that makes the state change; the job exists iff that change committed, and the unique `idempotency_key` makes re-enqueueing a no-op. Workers claim with `FOR UPDATE SKIP LOCKED`; a lock older than 5 minutes is reclaimed. Failures retry with exponential backoff (5 s doubling, capped at 1 h, ±50% jitter); after `max_attempts` (default 8) the job is `dead`, audited (`job_dead`) and kept for review. Handlers must be idempotent: check state first, pass a stable idempotency key to the provider, and apply the result with a conditional update.
+- **Why:** payouts and funding called the payment provider before writing anything, so a crash could lose the record of a real transfer. Now the pending row is committed first and the provider is called from a job.
+- **Tradeoff:** money flows are asynchronous (pending → paid); the UI polls while a transfer or funding is pending. The demo drains jobs with Next's `after()` so it still feels instant.
+- **Scheduling:** `/api/jobs/run` (Bearer `CRON_SECRET`) drains for up to 50 s and schedules the hourly `maintenance.prune`. `vercel.json` asks for every minute, which needs Vercel Pro; on Hobby, point an external pinger at the same URL. Locally: `npm run jobs:work`.
+- **Revisit when:** any job needs more than 5 minutes, or more than 10k jobs/day (move to a dedicated worker; backend plan Phase 5).
 
 ## Cost Estimate
 - **Monthly now (beta):** ~$20–45 — Vercel Pro $20 (Hobby is for non-commercial use and its cron is too infrequent), Neon free → $19 when storage/compute grows, Clerk free tier, Resend free tier, Sentry free tier, domain ~$1.
@@ -181,6 +189,7 @@ flowchart LR
 | Date | Reason | Changes |
 |------|--------|---------|
 | 2026-11-05 | Initial generation (brownfield review before moving from demo to beta) | — |
+| 2026-11-06 | Phase 0 slice 1 (hardening) | ADR-006 implemented; ADR-007 added (jobs table contract). Postgres rate limiter, encrypted webhook secrets with 24 h rotation overlap, CI. |
 
 ---
 To update, run `/planfirst` again.
