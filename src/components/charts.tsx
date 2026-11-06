@@ -18,7 +18,7 @@ export function BarChart({ data, label, height = 160 }: { data: { date: string; 
           {data.map((d, i) => {
             const h = (d.value / max) * (height - 4);
             return (
-              <rect key={d.date} x={i * w + w * 0.18} width={w * 0.64} y={height - h} height={h} rx="1" fill="var(--color-accent)">
+              <rect key={d.date} x={i * w + w * 0.18} width={w * 0.64} y={height - h} height={h} rx="1" fill="var(--color-accent)" className="bar-grow" style={{ animationDelay: `${Math.min(i, 30) * 18}ms` }}>
                 <title>{`${d.date}: ${d.value}`}</title>
               </rect>
             );

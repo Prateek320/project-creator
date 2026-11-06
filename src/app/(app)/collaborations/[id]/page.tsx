@@ -1,3 +1,4 @@
+import { BadgeCheck } from "lucide-react";
 import { and, desc, inArray } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { acceptAgreementAction, amendAction, declineAgreementAction, reviewAction, reviewDeliverableAction, simulateAction, submitDeliverableAction } from "@/app/actions";
@@ -27,6 +28,17 @@ function diffFormula(a: Formula, b: Formula): string[] {
   if (a.exclusions !== b.exclusions) out.push("Exclusions changed");
   return out;
 }
+
+/** Plain-language receipts for system events, so both sides see the record working for them. */
+const EVIDENCE: Record<string, string> = {
+  active: "Both sides accepted the same terms",
+  amendment_proposed: "Takes effect only when both sides accept",
+  approved: "Counts toward the agreed deliverables",
+  settlement_approved: "Recorded in the double-entry ledger",
+  payout_paid: "Ledger balanced · paid via the provider",
+  completed: "Added to the creator's verified track record",
+  reviewed: "Published to the creator's profile",
+};
 
 export default async function Workspace({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string>> }) {
   const actor = await requireActor();
@@ -265,11 +277,16 @@ export default async function Workspace({ params, searchParams }: { params: Prom
             <Card>
               <CardHeader title="Activity" description="Immutable audit trail for this collaboration" />
               <ol className="relative space-y-0 px-6 py-5">
-                {timeline.map((e) => (
-                  <li key={e.id} className="relative border-l border-line pb-4 pl-5 last:pb-0">
-                    <span aria-hidden className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-accent" />
+                {timeline.map((e, i) => (
+                  <li key={e.id} className="relative animate-pop-in border-l border-line pb-4 pl-5 last:pb-0" style={{ animationDelay: `${Math.min(i, 10) * 45}ms` }}>
+                    <span aria-hidden className={`absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white ${i === 0 ? "bg-ink" : "bg-black/25"}`} />
                     <div className="text-sm"><span className="capitalize">{e.action.replace(/_/g, " ")}</span> <span className="text-muted">· {c.deliverables.find((d) => d.id === e.entityId)?.title ?? (e.entityType === "agreement" ? `agreement v${c.versions.find((v) => v.id === e.entityId)?.version ?? ""}` : e.entityType)}</span></div>
                     <div className="text-xs text-muted">{fmtDateTime(e.createdAt)}{e.reason ? ` · “${e.reason}”` : ""}</div>
+                    {EVIDENCE[e.action] && (
+                      <div className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2.5 py-0.5 text-[11px] font-semibold text-ink-2">
+                        <BadgeCheck size={12} aria-hidden /> {EVIDENCE[e.action]}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ol>

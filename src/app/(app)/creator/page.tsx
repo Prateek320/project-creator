@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
 import { EarningsPreview } from "@/components/formula";
-import { ContinueBlock, DashHeader, MoneyCta, Ring, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, ContinueBlock, DashHeader, MoneyCta, Ring, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
 import { Fact, QuickSheet } from "@/components/dashboard/sheet";
@@ -12,14 +12,18 @@ import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { creatorHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
+import { listNotifications } from "@/server/admin";
 
 export const metadata = { title: "Home" };
 
 export default async function CreatorHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("creator");
   const sp = await searchParams;
-  const d = await creatorHomeData(await getDb(), actor);
+  const db = await getDb();
+  const [d, notes] = await Promise.all([creatorHomeData(db, actor), listNotifications(db, actor)]);
   const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const now = Date.now();
+  const activity = notes.rows.slice(0, 5).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, ago: agoLabel(n.createdAt, now), unread: !n.readAt }));
 
   // Smart default: "Needs you", unless nothing needs the creator and something is running.
   const fallback = d.counts.action > 0 || d.counts.active === 0 ? "action" : "active";
@@ -39,6 +43,7 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
         question="Offers to accept and content to submit or fix, soonest first."
         chips={[{ id: "all", label: "All" }, { id: "offers", label: "Offers" }, { id: "soon", label: "Due soon" }, { id: "changes", label: "Changes requested" }]}
         rows={of("action")}
+        beamFirst
         initialChip={chipFor("action")}
         emptyTitle="You're all caught up"
         emptyBody="Nothing needs you right now. Find your next paid campaign."
@@ -103,6 +108,7 @@ export default async function CreatorHome({ searchParams }: { searchParams: Prom
             {d.balances.creator_payable > 0 && (
               <MoneyCta amountLabel={`${formatINR(d.balances.creator_payable)} on its way`} sub="Approved and queued for payout" href="/creator/earnings" cta="View earnings" />
             )}
+            <ActivityFeed items={activity} />
             <SideCard title="For you" href="/creator/campaigns" linkLabel="Discover">
               {d.recommended.length === 0 ? (
                 <p className="px-1 text-sm text-muted">You&apos;ve applied to every open campaign in your niche. New ones appear here.</p>

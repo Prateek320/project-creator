@@ -56,7 +56,7 @@ export function NavLinks({ items }: { items: NavItem[] }) {
               className={cx(
                 "group flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all duration-150",
                 active
-                  ? "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)]"
+                  ? "dk-raise bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)] dark:bg-[#1f1f1f] dark:text-ink dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
                   : "text-ink-2 hover:bg-white/70 hover:text-ink",
               )}
             >

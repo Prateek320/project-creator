@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { Plus, type LucideIcon } from "lucide-react";
 import { formatINR } from "@/domain/money";
+import { Toast } from "./toast";
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
@@ -62,7 +63,7 @@ export function CardBody({ className, children }: { className?: string; children
  */
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)] hover:-translate-y-0.5 hover:bg-[#1c2033] active:translate-y-0",
+  primary: "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)] hover:-translate-y-0.5 hover:bg-ink/90 active:translate-y-0",
   secondary: "bg-white text-ink shadow-[0_1px_2px_rgba(15,18,34,0.08),0_4px_12px_-6px_rgba(15,18,34,0.15)] hover:-translate-y-0.5 active:translate-y-0 active:bg-white/80",
   ghost: "text-ink-2 hover:bg-white/70 hover:text-ink",
   danger: "bg-white text-bad ring-1 ring-inset ring-red-200 shadow-[0_1px_2px_rgba(15,18,34,0.06)] hover:bg-bad-50",
@@ -316,7 +317,7 @@ export function Flash({ sp }: { sp: Record<string, string | string[] | undefined
   const notice = typeof sp.notice === "string" ? sp.notice : null;
   const error = typeof sp.error === "string" ? sp.error : null;
   if (!notice && !error) return null;
-  return <div className="mb-6">{error ? <Notice tone="bad">{error}</Notice> : <Notice tone="good">{notice}</Notice>}</div>;
+  return error ? <Toast key={`e:${error}`} tone="bad" message={error} /> : <Toast key={`n:${notice}`} tone="good" message={notice!} />;
 }
 
 export function TestModeBadge() {

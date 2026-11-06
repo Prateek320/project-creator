@@ -92,6 +92,7 @@ export function FilteredList({
   emptyBody,
   emptyCta,
   action,
+  beamFirst = false,
 }: {
   title: string;
   question: string;
@@ -102,6 +103,8 @@ export function FilteredList({
   emptyBody: string;
   emptyCta?: { href: string; label: string };
   action?: ReactNode;
+  /** Draw a slow light around the first row: the single most urgent thing to do. */
+  beamFirst?: boolean;
 }) {
   const [chip, setChip] = useState(chips.some((c) => c.id === initialChip) ? initialChip : "all");
   const mounted = useRef(false);
@@ -163,21 +166,21 @@ export function FilteredList({
             )}
           </li>
         ) : (
-          shown.map((r, i) => <Row key={r.id} row={r} delay={Math.min(i, 8) * 35} />)
+          shown.map((r, i) => <Row key={r.id} row={r} delay={Math.min(i, 8) * 35} beam={beamFirst && chip === "all" && i === 0} />)
         )}
       </ul>
     </section>
   );
 }
 
-function Row({ row, delay }: { row: DashRow; delay: number }) {
+function Row({ row, delay, beam }: { row: DashRow; delay: number; beam?: boolean }) {
   const k = KIND[row.kind] ?? KIND.campaign!;
   const [label, cls] = STATUS[row.status] ?? [row.status.replace(/_/g, " "), NEUTRAL];
   const due = row.due;
   const dueCls = due?.tone === "late" ? "bg-rose-100 text-rose-700" : due?.tone === "soon" ? "bg-amber-100 text-amber-800" : "bg-black/5 text-muted";
   return (
     <li className="animate-rise" style={{ animationDelay: `${delay}ms` }}>
-      <Link href={row.href} className={cx(glassRow, "group flex items-center gap-3 p-3 sm:p-3.5")}>
+      <Link href={row.href} className={cx(glassRow, "group flex items-center gap-3 p-3 sm:p-3.5", beam && "beam")}>
         <span className={cx("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", k.tint)}>
           <k.icon size={19} strokeWidth={2} aria-hidden />
         </span>
@@ -193,7 +196,7 @@ function Row({ row, delay }: { row: DashRow; delay: number }) {
           {due && <div className={cx("mt-1 text-[11px] font-bold sm:hidden", due.tone === "late" ? "text-rose-700" : due.tone === "soon" ? "text-amber-700" : "text-muted")}>{due.text}</div>}
           {row.progress && row.progress.total > 0 && (
             <div className="mt-2 flex items-center gap-2">
-              <div className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-[#eceef5]">
+              <div className="h-1.5 w-full max-w-[220px] overflow-hidden rounded-full bg-black/[0.07]">
                 <div className="h-full rounded-full bg-ink" style={{ width: `${Math.min(100, (row.progress.done / row.progress.total) * 100)}%` }} />
               </div>
               <span className="text-[11px] font-bold tabular-nums text-muted">
@@ -212,7 +215,7 @@ function Row({ row, delay }: { row: DashRow; delay: number }) {
           )}
           {!due && row.amountLabel && <span className="text-[11px] font-medium text-muted">{row.amountLabel}</span>}
         </div>
-        <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f1f2f7] text-ink-2 transition-colors group-hover:bg-ink group-hover:text-white sm:grid">
+        <span className="hidden h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.05] text-ink-2 transition-colors group-hover:bg-ink group-hover:text-white sm:grid">
           <ChevronRight size={16} aria-hidden />
         </span>
       </Link>

@@ -10,10 +10,10 @@ const ARROW = "M17 35.5l8.5 8.5L52 14M40 13h12v12";
 export function LogoMark({ size = 28, title }: { size?: number; title?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" role={title ? "img" : undefined} aria-label={title} aria-hidden={title ? undefined : true} className="shrink-0">
-      <path d={SEAL} fill="#5048e8" />
-      <path d={SEAL} fill="none" stroke="#fff" strokeWidth="1.4" strokeDasharray="3 5" opacity=".32" transform="translate(30 34) scale(.8) translate(-30 -34)" />
-      <path d={ARROW} fill="none" stroke="#0f1222" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={ARROW} fill="none" stroke="#e3f25c" strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={SEAL} style={{ fill: "var(--logo-seal, #5048e8)" }} />
+      <path d={SEAL} fill="none" style={{ stroke: "var(--logo-ring, #fff)" }} strokeWidth="1.4" strokeDasharray="3 5" opacity=".32" transform="translate(30 34) scale(.8) translate(-30 -34)" />
+      <path d={ARROW} fill="none" style={{ stroke: "var(--logo-arrow-edge, #0f1222)" }} strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={ARROW} fill="none" style={{ stroke: "var(--logo-arrow, #e3f25c)" }} strokeWidth="6.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

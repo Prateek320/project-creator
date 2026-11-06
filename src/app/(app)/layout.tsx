@@ -4,7 +4,7 @@ import { logout } from "@/app/actions";
 import { Logo } from "@/components/logo";
 import { NavLinks, type NavItem } from "@/components/nav";
 import { Avatar, TestModeBadge } from "@/components/ui";
-import { ArrowLeftRight, Bell, ChevronDown, FlaskConical, LogOut, Menu, UserRound } from "lucide-react";
+import { ArrowLeftRight, Bell, ChevronDown, FlaskConical, LogOut, Menu, Settings, UserRound } from "lucide-react";
 import { listNotifications } from "@/server/admin";
 import { requireActor } from "@/server/session";
 import { eq } from "drizzle-orm";
@@ -25,11 +25,13 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/creator/collaborations", label: "Collaborations", icon: "handshake" },
     { href: "/creator/earnings", label: "Earnings", icon: "wallet" },
     { href: "/creator/profile", label: "Profile & portfolio", icon: "user" },
+    { href: "/settings", label: "Settings", icon: "settings" },
   ],
   admin: [
     { href: "/admin", label: "Overview", icon: "dashboard", exact: true },
     { href: "/admin/queue", label: "Trust & safety queue", icon: "shield" },
     { href: "/admin/audit", label: "Audit trail", icon: "list" },
+    { href: "/settings", label: "Settings", icon: "settings" },
   ],
 };
 
@@ -92,6 +94,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <div className="px-3 pb-2 pt-1.5"><div className="font-semibold">{actor.name}</div><div className="truncate text-xs text-muted">{actor.email}</div></div>
                 <div className="my-1 h-px bg-line-2" />
                 {actor.role === "creator" && actor.creatorProfileId && <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-black/5" href={`/creators/${actor.creatorProfileId}`}><UserRound size={16} className="text-faint" aria-hidden />View public profile</Link>}
+                <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-black/5" href="/settings"><Settings size={16} className="text-faint" aria-hidden />Settings &amp; appearance</Link>
                 <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-black/5" href="/login"><ArrowLeftRight size={16} className="text-faint" aria-hidden />Switch demo account</Link>
                 <form action={logout}><button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-black/5"><LogOut size={16} className="text-faint" aria-hidden />Sign out</button></form>
               </div>

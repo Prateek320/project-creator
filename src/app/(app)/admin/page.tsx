@@ -3,21 +3,25 @@ import { ScrollText, ShieldCheck } from "lucide-react";
 import { getDb } from "@/db";
 import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
-import { DashHeader, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, DashHeader, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
 import { cx, glassRow, limePill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { adminHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
+import { listNotifications } from "@/server/admin";
 
 export const metadata = { title: "Operations" };
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("admin");
   const sp = await searchParams;
-  const d = await adminHomeData(await getDb(), actor);
+  const db = await getDb();
+  const [d, notes] = await Promise.all([adminHomeData(db, actor), listNotifications(db, actor)]);
   const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const now = Date.now();
+  const activity = notes.rows.slice(0, 5).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, ago: agoLabel(n.createdAt, now), unread: !n.readAt }));
   const c = d.counts;
 
   const fallback = c.disputes > 0 ? "disputes" : c.verify > 0 ? "verify" : c.events > 0 ? "events" : "payments";
@@ -37,6 +41,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         question="Open disputes oldest first. Each resolution needs a written reason."
         chips={[{ id: "all", label: "All" }, { id: "open", label: "Open" }, { id: "resolved", label: "Resolved" }]}
         rows={of("disputes")}
+        beamFirst
         initialChip={chipFor("disputes")}
         emptyTitle="No disputes"
         emptyBody="When a brand or creator raises one, it lands here."
@@ -98,6 +103,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
             <FilterDashboard views={views} panels={panels} initialView={initialView} defaultView={fallback} />
           </div>
           <aside className="space-y-6">
+            <ActivityFeed items={activity} />
             <SideCard title="Principles">
               {[
                 ["Hold only what's disputed", "Undisputed earnings keep flowing to the creator."],

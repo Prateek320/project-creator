@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BadgeCheck, Building2, FileText, Handshake, ReceiptIndianRupee, Sparkles, UsersRound } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { DealFlow, RoleShowcase } from "@/components/deal-flow";
 import { Badge, ButtonLink, Card } from "@/components/ui";
 import { getActor, homeFor } from "@/server/session";
 
@@ -22,7 +23,7 @@ export default async function Landing() {
   return (
     <div className="min-h-dvh overflow-x-clip">
       {/* Soft top light: the page is lit from above. */}
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[640px] bg-[radial-gradient(60%_60%_at_50%_0%,#eef0ff_0%,rgba(255,255,255,0)_70%)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[640px] bg-[radial-gradient(60%_60%_at_50%_0%,#eef0ff_0%,rgba(255,255,255,0)_70%)] dark:hidden" />
 
       <header className="relative mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Logo size={30} />
@@ -52,41 +53,8 @@ export default async function Landing() {
           </div>
 
           <div className="relative animate-rise [animation-delay:120ms]">
-            <div aria-hidden className="absolute -inset-6 -z-10 rounded-[32px] bg-gradient-to-b from-accent-100/70 to-transparent blur-2xl" />
-            <Card className="p-7">
-              <div className="flex items-center justify-between">
-                <div className="eyebrow">Example · hybrid compensation</div>
-                <Badge tone="good">Verified events</Badge>
-              </div>
-              <div className="mt-6 grid grid-cols-2 gap-6">
-                <div>
-                  <div className="tnum text-[32px] font-bold leading-none tracking-[-0.02em]">₹3,000</div>
-                  <div className="mt-2 text-sm text-muted">guaranteed base for approved Reel + Stories</div>
-                </div>
-                <div>
-                  <div className="tnum text-[32px] font-bold leading-none tracking-[-0.02em]">₹70</div>
-                  <div className="mt-2 text-sm text-muted">per verified signup, capped at ₹10,000</div>
-                </div>
-              </div>
-              <div className="mt-7 border-t border-line-2 pt-6">
-                <div className="flex items-baseline justify-between">
-                  <div className="eyebrow">Actual performance</div>
-                  <div className="text-xs font-medium text-muted">50 of 100 target</div>
-                </div>
-                <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8ebf2] shadow-[var(--shadow-inset)]">
-                  <div className="h-full w-1/2 origin-left animate-grow rounded-full bg-gradient-to-r from-accent-400 to-accent [animation-delay:400ms]" />
-                </div>
-                <dl className="mt-6 space-y-3 text-sm">
-                  <div className="flex justify-between"><dt className="text-muted">Base (deliverables approved)</dt><dd className="tnum font-medium">₹3,000</dd></div>
-                  <div className="flex justify-between"><dt className="text-muted">50 verified signups × ₹70</dt><dd className="tnum font-medium">₹3,500</dd></div>
-                  <div className="flex justify-between"><dt className="text-muted">3 duplicates, 1 test signup</dt><dd className="text-faint">excluded</dd></div>
-                  <div className="flex items-baseline justify-between border-t border-line-2 pt-4"><dt className="font-semibold">Creator earns</dt><dd className="tnum text-2xl font-bold tracking-[-0.02em] text-good">₹6,500</dd></div>
-                </dl>
-                <p className="mt-5 text-xs leading-relaxed text-muted">
-                  50% of target doesn&apos;t mean 50% of budget. Payment follows the formula both sides accepted — creators aren&apos;t penalised for a brand&apos;s landing page.
-                </p>
-              </div>
-            </Card>
+            <div aria-hidden className="absolute -inset-6 -z-10 rounded-[32px] bg-gradient-to-b from-accent-100/70 to-transparent blur-2xl dark:hidden" />
+            <DealFlow />
           </div>
         </section>
 
@@ -108,6 +76,17 @@ export default async function Landing() {
                 </Card>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pt-24 sm:px-6">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+            <div>
+              <div className="eyebrow text-accent">One workspace, every side</div>
+              <h2 className="mt-3 text-3xl font-bold tracking-[-0.02em]">Everyone sees the same deal, tailored to their job.</h2>
+              <p className="mt-4 leading-relaxed text-muted">Brands, creators and operations work from one versioned agreement and one ledger. Nobody keeps their own spreadsheet of what was promised.</p>
+            </div>
+            <RoleShowcase />
           </div>
         </section>
 

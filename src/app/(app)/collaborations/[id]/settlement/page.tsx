@@ -1,6 +1,8 @@
 import { getDb } from "@/db";
 import { approveSettlementAction, completeAction, disputeAction, payoutAction } from "@/app/actions";
 import { SubmitButton } from "@/components/client";
+import { AutoRefresh, CountUp, NewRows } from "@/components/motion";
+import { PayoutReceipt } from "@/components/receipt";
 import { Card, CardBody, CardHeader, Field, Flash, Money, Notice, Stat, StatusChip, fmtDateTime, inputClass } from "@/components/ui";
 import { describeFormula } from "@/domain/compensation";
 import { ACCOUNTS } from "@/domain/ledger";
@@ -21,14 +23,25 @@ export default async function Settlement({ params, searchParams }: { params: Pro
   const clicks = s.events.filter((e) => e.eventType === "click" && e.validityState === "valid").length;
   const isBrand = c.side === "brand";
   const live = c.active && (c.active.status === "accepted" || c.active.status === "disputed");
+  const key = `settle:${c.root.id}`;
+  // Receipt shown once, right after the brand pays out.
+  const lastPaid = sp.receipt === "1" ? [...s.transfers].reverse().find((t) => t.state === "paid") : undefined;
+  const lastPayoutGroup = lastPaid ? [...s.entries].reverse().find((e) => e.entryType === "payout")?.transactionGroupId : undefined;
+  const receiptLines = lastPayoutGroup
+    ? s.entries.filter((e) => e.transactionGroupId === lastPayoutGroup).map((e) => ({ label: ACCOUNTS[e.account as keyof typeof ACCOUNTS] ?? e.account, amountMinor: e.amountMinor }))
+    : [];
 
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Earned under the agreement" value={formatINR(r.totalMinor)} hint={`Agreement v${c.active?.version ?? c.root.version}`} />
-        <Stat label="Approved by brand" value={formatINR(s.settledToDate)} hint={s.pendingApprovalMinor > 0 ? `${formatINR(s.pendingApprovalMinor)} awaiting approval` : "Up to date"} tone={s.pendingApprovalMinor > 0 ? "warn" : "good"} />
-        <Stat label="Paid out" value={formatINR(s.balances.creator_paid)} hint={`${formatINR(s.balances.creator_payable)} ready for payout`} />
+      {live && <AutoRefresh every={15000} />}
+      {lastPaid && (
+        <PayoutReceipt amountMinor={lastPaid.amountMinor} creator={c.creator.displayName} campaign={c.campaign.title} providerRef={lastPaid.providerRef ?? "mock"} when={fmtDateTime(lastPaid.createdAt)} lines={receiptLines} />
+      )}
+      <div className="tiles grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Earned under the agreement" value={<CountUp value={r.totalMinor} format="inr" storageKey={`${key}:earned`} />} hint={`Agreement v${c.active?.version ?? c.root.version}`} />
+        <Stat label="Approved by brand" value={<CountUp value={s.settledToDate} format="inr" storageKey={`${key}:approved`} />} hint={s.pendingApprovalMinor > 0 ? `${formatINR(s.pendingApprovalMinor)} awaiting approval` : "Up to date"} tone={s.pendingApprovalMinor > 0 ? "warn" : "good"} />
+        <Stat label="Paid out" value={<CountUp value={s.balances.creator_paid} format="inr" storageKey={`${key}:paid`} />} hint={`${formatINR(s.balances.creator_payable)} ready for payout`} />
         <Stat label="Held for dispute" value={formatINR(s.balances.dispute_hold)} hint={s.openDispute ? "Undisputed portion still payable" : "Nothing held"} tone={s.balances.dispute_hold ? "warn" : undefined} />
       </div>
 
@@ -45,7 +58,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                       <td className={`tnum py-2.5 text-right ${l.amountMinor < 0 ? "text-bad" : ""}`}>{l.amountMinor === 0 && l.label === "Excluded events" ? "—" : `${l.amountMinor < 0 ? "−" : ""}${formatINR(Math.abs(l.amountMinor))}`}</td>
                     </tr>
                   ))}
-                  <tr><td className="pt-3 font-semibold">Total earned</td><td className="tnum pt-3 text-right text-lg font-semibold"><Money minor={r.totalMinor} /></td></tr>
+                  <tr><td className="pt-3 font-semibold">Total earned</td><td className="pt-3 text-right text-lg font-semibold"><CountUp value={r.totalMinor} format="inr" storageKey={`${key}:total`} /></td></tr>
                 </tbody>
               </table>
               {f.model === "hybrid" && r.deliverablesApproved < r.deliverablesTotal && (
@@ -56,13 +69,16 @@ export default async function Settlement({ params, searchParams }: { params: Pro
           </Card>
 
           <Card>
-            <CardHeader title="Evidence" description={`${outcomeEvents.length} outcome events received · ${clicks.toLocaleString("en-IN")} tracked clicks`} />
-            <div className="max-h-[420px] overflow-auto">
+            <CardHeader
+              title={<span className="flex items-center gap-2">Evidence{live && <span className="inline-flex items-center gap-1.5 rounded-full bg-black/5 px-2 py-0.5 text-[11px] font-bold text-ink-2"><span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" /><span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" /></span>Live</span>}</span>}
+              description={<><CountUp value={outcomeEvents.length} storageKey={`${key}:events`} /> outcome events received · {clicks.toLocaleString("en-IN")} tracked clicks</>}
+            />
+            <NewRows storageKey={`${key}:evidence`} className="max-h-[420px] overflow-auto">
               <table className="w-full min-w-[560px] text-sm">
                 <thead className="sticky top-0 bg-white/90 backdrop-blur"><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-6 py-2.5 font-medium">Counted?</th></tr></thead>
                 <tbody className="divide-y divide-line-2">
                   {outcomeEvents.slice(0, 200).map((e) => (
-                    <tr key={e.id}>
+                    <tr key={e.id} data-row-id={e.id}>
                       <td className="px-6 py-2.5 font-mono text-xs">{e.eventId}</td>
                       <td className="px-3 py-2">{e.eventType}</td>
                       <td className="px-3 py-2 text-xs text-muted">{fmtDateTime(e.occurredAt)}</td>
@@ -73,18 +89,18 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                   {outcomeEvents.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">No outcome events yet.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </NewRows>
           </Card>
 
           <Card>
             <CardHeader title="Ledger" description="Append-only. Every transaction balances to zero." />
             {s.entries.length === 0 ? <p className="px-6 py-8 text-sm text-muted">No entries yet.</p> : (
-              <div className="overflow-x-auto">
+              <NewRows storageKey={`${key}:ledger`} className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
                   <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">When</th><th className="px-3 py-2 font-medium">Account</th><th className="px-3 py-2 font-medium">Memo</th><th className="px-6 py-2.5 text-right font-medium">Amount</th></tr></thead>
                   <tbody className="divide-y divide-line-2">
                     {[...s.entries].reverse().map((e) => (
-                      <tr key={e.id}>
+                      <tr key={e.id} data-row-id={e.id}>
                         <td className="whitespace-nowrap px-6 py-2.5 text-xs text-muted">{fmtDateTime(e.createdAt)}</td>
                         <td className="px-3 py-2">{ACCOUNTS[e.account as keyof typeof ACCOUNTS] ?? e.account}</td>
                         <td className="max-w-[280px] px-3 py-2 text-xs text-muted">{e.memo}</td>
@@ -93,7 +109,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </NewRows>
             )}
           </Card>
         </div>

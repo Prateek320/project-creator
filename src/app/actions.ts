@@ -216,8 +216,10 @@ export async function reviewDeliverableAction(fd: FormData) {
 // ---------- attribution ----------
 export async function simulateAction(fd: FormData) {
   await act(fd, "/", async (db, actor) => {
-    const r = await finance.simulateConversions(db, actor, str(fd, "agreementId"), int(fd, "count", 10));
-    return `Demo webhook: ${r.accepted} new events recorded, ${r.duplicates} duplicate ignored`;
+    const id = str(fd, "agreementId");
+    const r = await finance.simulateConversions(db, actor, id, int(fd, "count", 10));
+    // Land on the settlement so the brand watches the new events tick in.
+    return { notice: `Demo webhook: ${r.accepted} new events recorded, ${r.duplicates} duplicate ignored`, to: `/collaborations/${id}/settlement` };
   });
 }
 export async function csvImportAction(fd: FormData) {
@@ -255,7 +257,7 @@ export async function approveSettlementAction(fd: FormData) {
 export async function payoutAction(fd: FormData) {
   await act(fd, "/", async (db, actor) => {
     await finance.payoutCreator(db, actor, str(fd, "agreementId"));
-    return "Payout sent via the mock provider (test mode)";
+    return { notice: "Payout sent via the mock provider (test mode)", to: withParam(safeBack(fd, "/"), "receipt", "1") };
   });
 }
 export async function completeAction(fd: FormData) {

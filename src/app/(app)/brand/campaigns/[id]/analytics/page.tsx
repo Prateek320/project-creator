@@ -29,7 +29,7 @@ export default async function Analytics({ params, searchParams }: { params: Prom
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="tiles grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat icon={BadgeCheck} label={`Verified ${r.outcomeType}s`} value={valid.toLocaleString("en-IN")} hint={`Target ${r.campaign.measurement.target} per creator`} />
         <Stat icon={MousePointerClick} label="Tracked clicks" value={formatCompact(clicks)} hint={clicks ? `${pct(valid / clicks, 1)} click → ${r.outcomeType}` : "No clicks yet"} />
         <Stat icon={HandCoins} label="Earned by creators" value={formatINR(earned)} hint={`${formatINR(committed)} approved so far`} />

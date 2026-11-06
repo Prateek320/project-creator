@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { resetDemo } from "@/app/actions";
 import { CopyButton, SubmitButton } from "@/components/client";
+import { ThemeToggle } from "@/components/theme";
 import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip } from "@/components/ui";
 import { signPayload } from "@/domain/attribution";
 import { requireActor } from "@/server/session";
@@ -36,6 +37,10 @@ export default async function Settings({ searchParams }: { searchParams: Promise
       <Flash sp={sp} />
       <PageHeader title="Team & settings" />
       <div className="grid gap-8 lg:grid-cols-2">
+        <Card>
+          <CardHeader title="Appearance" description="Light keeps the proovd colours. Dark is a quiet monochrome theme. System follows your device." />
+          <CardBody><ThemeToggle /></CardBody>
+        </Card>
         <Card>
           <CardHeader title="Organisation" actions={<StatusChip status={org!.verificationState} label={org!.verificationState === "verified" ? "Business verified" : undefined} />} />
           <CardBody><DL items={[["Display name", org!.displayName], ["Legal name", org!.legalName], ["Category", org!.category], ["Website", org!.website ?? "—"]]} /></CardBody>

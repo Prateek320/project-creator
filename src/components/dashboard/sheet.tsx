@@ -39,7 +39,7 @@ export function QuickSheet({ initials, badge, title, subtitle, eyebrow, descript
             <span className="mt-1 block truncate text-[15px] font-bold leading-tight text-ink">{title}</span>
             <span className="mt-0.5 block truncate text-xs text-muted">{subtitle}</span>
           </span>
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f1f2f7] text-ink-2 transition-colors group-hover:bg-ink group-hover:text-white">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-black/[0.05] text-ink-2 transition-colors group-hover:bg-ink group-hover:text-white">
             <ChevronRight size={16} aria-hidden />
           </span>
         </button>

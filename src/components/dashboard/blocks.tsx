@@ -67,7 +67,7 @@ export function ContinueBlock({ data }: { data: ContinueData }) {
         </div>
         {data.progress && (
           <div className="mt-5 flex items-center gap-3 rounded-full bg-white p-1.5 pr-4 shadow-sm">
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#eceef5]">
+            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-black/[0.07]">
               <div className="h-full origin-left animate-grow rounded-full bg-ink" style={{ width: `${data.progress.total ? Math.min(100, (data.progress.done / data.progress.total) * 100) : 0}%` }} />
             </div>
             <span className="text-xs font-bold tabular-nums text-ink">{data.progress.label}</span>
@@ -100,8 +100,8 @@ export function Ring({ value }: { value: number }) {
   return (
     <div className="relative h-[68px] w-[68px] shrink-0" role="img" aria-label={`${value}% complete`}>
       <svg viewBox="0 0 64 64" className="h-full w-full -rotate-90">
-        <circle cx="32" cy="32" r={r} fill="none" stroke="white" strokeWidth="7" />
-        <circle cx="32" cy="32" r={r} fill="none" stroke="#0f1222" strokeWidth="7" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value / 100)} />
+        <circle cx="32" cy="32" r={r} fill="none" style={{ stroke: "var(--color-white)" }} strokeWidth="7" />
+        <circle cx="32" cy="32" r={r} fill="none" style={{ stroke: "var(--color-ink)" }} strokeWidth="7" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value / 100)} />
       </svg>
       <span className="absolute inset-0 grid place-items-center text-sm font-extrabold tabular-nums text-ink">{value}%</span>
     </div>
@@ -122,5 +122,64 @@ export function MoneyCta({ amountLabel, sub, href, cta }: { amountLabel: string;
         {cta} <span className="font-normal text-lime">→</span>
       </Link>
     </section>
+  );
+}
+
+export interface ActivityItem {
+  id: string;
+  title: string;
+  body: string;
+  href: string | null;
+  ago: string;
+  unread: boolean;
+}
+
+/** Server-side "5m ago" label (avoids client clock drift during hydration). */
+export function agoLabel(d: Date, now = Date.now()) {
+  const m = Math.max(0, Math.round((now - d.getTime()) / 60000));
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
+/** Recent activity with a live indicator on unread items; entries pop in one after another. */
+export function ActivityFeed({ items }: { items: ActivityItem[] }) {
+  return (
+    <SideCard title="Activity" href="/notifications" linkLabel="All">
+      {items.length === 0 ? (
+        <p className="px-1 text-sm text-muted">Updates on offers, content and payouts show up here.</p>
+      ) : (
+        <ol className="space-y-1">
+          {items.map((it, i) => {
+            const inner = (
+              <>
+                <span className="relative mt-1.5 flex h-2 w-2 shrink-0">
+                  {it.unread && <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-lime opacity-70" />}
+                  <span className={cx("relative inline-flex h-2 w-2 rounded-full", it.unread ? "bg-ink" : "bg-black/15")} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-ink">{it.title}</span>
+                  {it.body && <span className="block truncate text-xs text-muted">{it.body}</span>}
+                </span>
+                <span className="shrink-0 pt-0.5 text-[11px] font-medium text-faint">{it.ago}</span>
+              </>
+            );
+            return (
+              <li key={it.id} className="animate-pop-in" style={{ animationDelay: `${120 + i * 70}ms` }}>
+                {it.href ? (
+                  <Link href={it.href} className="flex items-start gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-white/70">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div className="flex items-start gap-3 px-2 py-2">{inner}</div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </SideCard>
   );
 }

@@ -77,7 +77,7 @@ export function CampaignBuilder() {
             <li key={s}>
               <button type="button" onClick={() => setStep(i)} aria-current={step === i ? "step" : undefined}
                 className={cx("flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm", step === i ? "bg-white font-medium text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink")}>
-                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-[#e3e7ef] text-slate-600")}>{i < step ? "✓" : i + 1}</span>
+                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-black/10 text-slate-600")}>{i < step ? "✓" : i + 1}</span>
                 {s}
               </button>
             </li>

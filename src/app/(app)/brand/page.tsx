@@ -4,7 +4,7 @@ import { ArrowUpRight, BadgeCheck, Plus } from "lucide-react";
 import { getDb, schema } from "@/db";
 import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
-import { ContinueBlock, DashHeader, MoneyCta, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, ContinueBlock, DashHeader, MoneyCta, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
 import { Fact, QuickSheet } from "@/components/dashboard/sheet";
@@ -12,6 +12,7 @@ import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { brandHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
+import { listNotifications } from "@/server/admin";
 
 export const metadata = { title: "Overview" };
 
@@ -19,8 +20,10 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
   const actor = await requireActor("brand");
   const sp = await searchParams;
   const db = await getDb();
-  const [d, [org]] = await Promise.all([brandHomeData(db, actor), db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!))]);
+  const [d, [org], notes] = await Promise.all([brandHomeData(db, actor), db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!)), listNotifications(db, actor)]);
   const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const now = Date.now();
+  const activity = notes.rows.slice(0, 5).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, ago: agoLabel(n.createdAt, now), unread: !n.readAt }));
   const b = d.balances;
   const campaignCount = of("campaigns").length;
 
@@ -46,6 +49,7 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
         question="Content to review, earnings to approve or pay, and disputes to answer."
         chips={[{ id: "all", label: "All" }, { id: "review", label: "Content review" }, { id: "money", label: "Approve & pay" }, { id: "disputes", label: "Disputes" }]}
         rows={of("action")}
+        beamFirst
         initialChip={chipFor("action")}
         emptyTitle="You're all caught up"
         emptyBody="No content, settlements or disputes are waiting on you."
@@ -115,6 +119,7 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
               href="/brand/billing"
               cta="Billing & ledger"
             />
+            <ActivityFeed items={activity} />
             <SideCard title="Top creators" href="/brand/creators" linkLabel="Discover">
               {d.topCreators.length === 0 ? (
                 <p className="px-1 text-sm text-muted">Creators with a verified track record appear here.</p>

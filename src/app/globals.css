@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode is driven by data-theme on <html> (set before paint by ThemeScript). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * Design tokens. Principles (learnui.design "7 rules"):
  *  - Light comes from above: raised surfaces are lighter with a soft shadow below; inputs are sunken.
@@ -52,6 +55,9 @@
   --animate-fade: fade 180ms ease-out both;
   --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-grow: grow 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-toast-in: toast-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-row-new: row-new 2400ms ease-out both;
+  --animate-dot: dot 1.2s ease-in-out infinite;
 }
 
 @keyframes rise {
@@ -70,6 +76,247 @@
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
 }
+
+
+/* ---------- Dark theme ----------
+ * A near-black monochrome base (white type, white pill buttons) with proovd's colours kept as
+ * accents where they carry meaning: lime for the one key action and selection, indigo for the
+ * brand mark and links, and soft hue tints for status. Everything else stays neutral.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-white: #161616;
+  --color-black: #ffffff;
+  --color-canvas: #0a0a0a;
+  --color-surface: #161616;
+  --color-sunken: rgba(255, 255, 255, 0.04);
+  --color-ink: #f2f2f2;
+  --color-ink-2: #cfcfcf;
+  --color-muted: #9a9a9a;
+  --color-faint: #6b6b6b;
+  --color-line: rgba(255, 255, 255, 0.1);
+  --color-line-2: rgba(255, 255, 255, 0.06);
+  --color-lime: #e3f25c;
+  --color-lime-soft: rgba(227, 242, 92, 0.12);
+  --color-accent: #a5b4fc;
+  --color-accent-400: #c7d2fe;
+  --color-accent-600: #818cf8;
+  --color-accent-700: #6366f1;
+  --color-accent-50: rgba(99, 102, 241, 0.08);
+  --color-accent-100: rgba(99, 102, 241, 0.16);
+  --color-accent-200: rgba(99, 102, 241, 0.28);
+  --color-good: #6ee7b7;
+  --color-good-50: rgba(16, 185, 129, 0.12);
+  --color-warn: #fcd34d;
+  --color-warn-50: rgba(245, 158, 11, 0.12);
+  --color-info: #7dd3fc;
+  --color-info-50: rgba(14, 165, 233, 0.12);
+  --color-bad: #fca5a5;
+  --color-bad-50: rgba(239, 68, 68, 0.12);
+  --color-green-50: rgba(34,197,94, 0.06);
+  --color-green-100: rgba(34,197,94, 0.14);
+  --color-green-200: rgba(34,197,94, 0.22);
+  --color-green-300: rgba(34,197,94, 0.32);
+  --color-green-400: #4ade80;
+  --color-green-500: #4ade80;
+  --color-green-600: #86efac;
+  --color-green-700: #86efac;
+  --color-green-800: #bbf7d0;
+  --color-green-900: #bbf7d0;
+  --color-emerald-50: rgba(16,185,129, 0.06);
+  --color-emerald-100: rgba(16,185,129, 0.14);
+  --color-emerald-200: rgba(16,185,129, 0.22);
+  --color-emerald-300: rgba(16,185,129, 0.32);
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #34d399;
+  --color-emerald-600: #6ee7b7;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-900: #a7f3d0;
+  --color-teal-50: rgba(20,184,166, 0.06);
+  --color-teal-100: rgba(20,184,166, 0.14);
+  --color-teal-200: rgba(20,184,166, 0.22);
+  --color-teal-300: rgba(20,184,166, 0.32);
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #2dd4bf;
+  --color-teal-600: #5eead4;
+  --color-teal-700: #5eead4;
+  --color-teal-800: #99f6e4;
+  --color-teal-900: #99f6e4;
+  --color-lime-50: rgba(163,230,53, 0.06);
+  --color-lime-100: rgba(163,230,53, 0.14);
+  --color-lime-200: rgba(163,230,53, 0.22);
+  --color-lime-300: rgba(163,230,53, 0.32);
+  --color-lime-400: #bef264;
+  --color-lime-500: #bef264;
+  --color-lime-600: #d9f99d;
+  --color-lime-700: #d9f99d;
+  --color-lime-800: #ecfccb;
+  --color-lime-900: #ecfccb;
+  --color-amber-50: rgba(245,158,11, 0.06);
+  --color-amber-100: rgba(245,158,11, 0.14);
+  --color-amber-200: rgba(245,158,11, 0.22);
+  --color-amber-300: rgba(245,158,11, 0.32);
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fcd34d;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-900: #fde68a;
+  --color-yellow-50: rgba(234,179,8, 0.06);
+  --color-yellow-100: rgba(234,179,8, 0.14);
+  --color-yellow-200: rgba(234,179,8, 0.22);
+  --color-yellow-300: rgba(234,179,8, 0.32);
+  --color-yellow-400: #facc15;
+  --color-yellow-500: #facc15;
+  --color-yellow-600: #fde047;
+  --color-yellow-700: #fde047;
+  --color-yellow-800: #fef08a;
+  --color-yellow-900: #fef08a;
+  --color-orange-50: rgba(249,115,22, 0.06);
+  --color-orange-100: rgba(249,115,22, 0.14);
+  --color-orange-200: rgba(249,115,22, 0.22);
+  --color-orange-300: rgba(249,115,22, 0.32);
+  --color-orange-400: #fb923c;
+  --color-orange-500: #fb923c;
+  --color-orange-600: #fdba74;
+  --color-orange-700: #fdba74;
+  --color-orange-800: #fed7aa;
+  --color-orange-900: #fed7aa;
+  --color-sky-50: rgba(14,165,233, 0.06);
+  --color-sky-100: rgba(14,165,233, 0.14);
+  --color-sky-200: rgba(14,165,233, 0.22);
+  --color-sky-300: rgba(14,165,233, 0.32);
+  --color-sky-400: #38bdf8;
+  --color-sky-500: #38bdf8;
+  --color-sky-600: #7dd3fc;
+  --color-sky-700: #7dd3fc;
+  --color-sky-800: #bae6fd;
+  --color-sky-900: #bae6fd;
+  --color-blue-50: rgba(59,130,246, 0.06);
+  --color-blue-100: rgba(59,130,246, 0.14);
+  --color-blue-200: rgba(59,130,246, 0.22);
+  --color-blue-300: rgba(59,130,246, 0.32);
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #60a5fa;
+  --color-blue-600: #93c5fd;
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+  --color-blue-900: #bfdbfe;
+  --color-cyan-50: rgba(6,182,212, 0.06);
+  --color-cyan-100: rgba(6,182,212, 0.14);
+  --color-cyan-200: rgba(6,182,212, 0.22);
+  --color-cyan-300: rgba(6,182,212, 0.32);
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #22d3ee;
+  --color-cyan-600: #67e8f9;
+  --color-cyan-700: #67e8f9;
+  --color-cyan-800: #a5f3fc;
+  --color-cyan-900: #a5f3fc;
+  --color-indigo-50: rgba(99,102,241, 0.06);
+  --color-indigo-100: rgba(99,102,241, 0.14);
+  --color-indigo-200: rgba(99,102,241, 0.22);
+  --color-indigo-300: rgba(99,102,241, 0.32);
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #818cf8;
+  --color-indigo-600: #a5b4fc;
+  --color-indigo-700: #a5b4fc;
+  --color-indigo-800: #c7d2fe;
+  --color-indigo-900: #c7d2fe;
+  --color-violet-50: rgba(139,92,246, 0.06);
+  --color-violet-100: rgba(139,92,246, 0.14);
+  --color-violet-200: rgba(139,92,246, 0.22);
+  --color-violet-300: rgba(139,92,246, 0.32);
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #a78bfa;
+  --color-violet-600: #c4b5fd;
+  --color-violet-700: #c4b5fd;
+  --color-violet-800: #ddd6fe;
+  --color-violet-900: #ddd6fe;
+  --color-purple-50: rgba(168,85,247, 0.06);
+  --color-purple-100: rgba(168,85,247, 0.14);
+  --color-purple-200: rgba(168,85,247, 0.22);
+  --color-purple-300: rgba(168,85,247, 0.32);
+  --color-purple-400: #c084fc;
+  --color-purple-500: #c084fc;
+  --color-purple-600: #d8b4fe;
+  --color-purple-700: #d8b4fe;
+  --color-purple-800: #e9d5ff;
+  --color-purple-900: #e9d5ff;
+  --color-fuchsia-50: rgba(217,70,239, 0.06);
+  --color-fuchsia-100: rgba(217,70,239, 0.14);
+  --color-fuchsia-200: rgba(217,70,239, 0.22);
+  --color-fuchsia-300: rgba(217,70,239, 0.32);
+  --color-fuchsia-400: #e879f9;
+  --color-fuchsia-500: #e879f9;
+  --color-fuchsia-600: #f0abfc;
+  --color-fuchsia-700: #f0abfc;
+  --color-fuchsia-800: #f5d0fe;
+  --color-fuchsia-900: #f5d0fe;
+  --color-pink-50: rgba(236,72,153, 0.06);
+  --color-pink-100: rgba(236,72,153, 0.14);
+  --color-pink-200: rgba(236,72,153, 0.22);
+  --color-pink-300: rgba(236,72,153, 0.32);
+  --color-pink-400: #f472b6;
+  --color-pink-500: #f472b6;
+  --color-pink-600: #f9a8d4;
+  --color-pink-700: #f9a8d4;
+  --color-pink-800: #fbcfe8;
+  --color-pink-900: #fbcfe8;
+  --color-rose-50: rgba(244,63,94, 0.06);
+  --color-rose-100: rgba(244,63,94, 0.14);
+  --color-rose-200: rgba(244,63,94, 0.22);
+  --color-rose-300: rgba(244,63,94, 0.32);
+  --color-rose-400: #fb7185;
+  --color-rose-500: #fb7185;
+  --color-rose-600: #fda4af;
+  --color-rose-700: #fda4af;
+  --color-rose-800: #fecdd3;
+  --color-rose-900: #fecdd3;
+  --color-red-50: rgba(239,68,68, 0.06);
+  --color-red-100: rgba(239,68,68, 0.14);
+  --color-red-200: rgba(239,68,68, 0.22);
+  --color-red-300: rgba(239,68,68, 0.32);
+  --color-red-400: #f87171;
+  --color-red-500: #f87171;
+  --color-red-600: #fca5a5;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fecaca;
+  --color-slate-50: rgba(148,163,184, 0.06);
+  --color-slate-100: rgba(148,163,184, 0.14);
+  --color-slate-200: rgba(148,163,184, 0.22);
+  --color-slate-300: rgba(148,163,184, 0.32);
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #e2e8f0;
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-card-hover: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 12px 32px -12px rgba(0, 0, 0, 0.8);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 48px -12px rgba(0, 0, 0, 0.9);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  --logo-arrow-edge: #0a0a0a;
+}
+/* The light theme's pastel wash, echoed as two faint glows on black. */
+[data-theme="dark"] body {
+  background:
+    radial-gradient(60% 45% at 12% 0%, rgba(99, 102, 241, 0.11), transparent 70%),
+    radial-gradient(45% 35% at 100% 100%, rgba(227, 242, 92, 0.05), transparent 70%),
+    #0a0a0a;
+}
+/* Text on lime always reads dark. */
+[data-theme="dark"] .bg-lime { color: #0a0a0a; }
+[data-theme="dark"] .bg-lime [class*="text-"] { color: rgba(10, 10, 10, 0.6); }
+/* Primary pills invert to white; lime marks inside them turn dark. `dk-raise` opts out for
+   selected states that stay dark and keep their lime. */
+[data-theme="dark"] .bg-ink:not(.dk-raise) .text-lime,
+[data-theme="dark"] .bg-ink.text-lime:not(.dk-raise) { color: #0a0a0a; }
+[data-theme="dark"] .bg-ink:not(.dk-raise) .bg-lime { background-color: #0a0a0a; color: #e3f25c; }
+[data-theme="dark"] [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] :focus-visible { outline-color: var(--color-lime); }
+[data-theme="dark"] ::selection { background: #e3f25c; color: #0a0a0a; }
 
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -116,6 +363,60 @@ input[type="range"] { accent-color: var(--color-ink); }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--color-ink); }
 input[type="file"]::file-selector-button { cursor: pointer; }
 
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+/* New evidence rows: slide in and briefly glow. */
+@keyframes row-new {
+  0% { opacity: 0; transform: translateX(-6px); background-color: color-mix(in srgb, var(--color-lime) 45%, transparent); }
+  15% { opacity: 1; transform: none; }
+  100% { background-color: transparent; }
+}
+@keyframes dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+@keyframes beam-spin { to { --beam-angle: 360deg; } }
+@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+/* A slow light that travels around the one card that needs attention. */
+.beam { position: relative; isolation: isolate; }
+.beam::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(from var(--beam-angle), transparent 0 70%, color-mix(in srgb, var(--color-lime) 90%, var(--color-ink)) 82%, transparent 94%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: beam-spin 5s linear infinite;
+  pointer-events: none;
+}
+.typing-dots > span { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; animation: var(--animate-dot); }
+.typing-dots > span:nth-child(2) { animation-delay: 150ms; }
+.typing-dots > span:nth-child(3) { animation-delay: 300ms; }
+.check-draw { stroke-dasharray: 48; stroke-dashoffset: 48; animation: check-draw 520ms 180ms cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+.row-new > * { animation: var(--animate-row-new); animation-delay: var(--row-delay, 0ms); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
+  .check-draw { stroke-dashoffset: 0; }
+}
+
+/* Chart bars rise from the baseline, left to right. */
+@keyframes bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-grow { transform-box: fill-box; transform-origin: bottom; animation: bar-grow 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Stat tiles pop in with a short stagger. */
+.tiles > * { animation: var(--animate-pop-in); }
+.tiles > *:nth-child(2) { animation-delay: 50ms; }
+.tiles > *:nth-child(3) { animation-delay: 100ms; }
+.tiles > *:nth-child(4) { animation-delay: 150ms; }
+@media (prefers-reduced-motion: reduce) {
+  .bar-grow, .tiles > * { animation: none !important; transform: none; }
 }
