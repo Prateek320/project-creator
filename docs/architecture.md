@@ -144,7 +144,7 @@ flowchart LR
 ### ADR-005: Data near India, PII separable from money records
 - **Choice:** Neon (aws-ap-southeast-1) and Vercel functions (`sin1`) pinned to Singapore, the nearest region Neon offers (2026-11-06: Mumbai is not available); ledger and audit reference ids only; PII lives in `users`/`creator_profiles` and can be pseudonymised for DPDP erasure without breaking append-only tables.
 - **Why:** DPDP obligations apply in full from ~May 2027; append-only money records can't be deleted.
-- **Tradeoff:** erasure is pseudonymisation, documented in the privacy notice.
+- **Tradeoff:** erasure is pseudonymisation, documented in the privacy notice. Users in India pay one extra network hop (~50–70 ms per request) to Singapore, and personal data is stored outside India — the privacy notice must say so.
 - **Revisit when:** legal advice requires data stored in India (DPDP allows cross-border transfer except to countries the government restricts; confirm with counsel), or Neon adds Mumbai.
 
 ### ADR-006: Separate demo, staging and production environments
