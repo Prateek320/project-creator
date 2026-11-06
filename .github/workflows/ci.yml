@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
 
+# Runners are pinned: ubuntu-latest moves to new releases before Playwright supports them.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -12,7 +13,7 @@ concurrency:
 jobs:
   checks:
     name: Typecheck, lint, unit and service tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,7 +25,7 @@ jobs:
 
   postgres:
     name: Migrations, seed and jobs on real Postgres
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -53,7 +54,7 @@ jobs:
 
   e2e:
     name: End-to-end (demo and staging)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
