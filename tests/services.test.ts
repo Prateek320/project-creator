@@ -284,7 +284,8 @@ describe("jobs and outbox", () => {
 
   it("failing jobs back off, then go dead with an audit row", async () => {
     await db.insert(schema.jobs).values({ kind: "maintenance.prune", idempotencyKey: "test:always-fails", maxAttempts: 2 });
-    const failing = { "payout.transfer": async () => {}, "funding.collect": async () => {}, "maintenance.prune": async () => { throw new Error("boom"); } };
+    const noop = async () => {};
+    const failing = { "payout.transfer": noop, "funding.collect": noop, "email.send": noop, "privacy.export": noop, "privacy.erasure": noop, "maintenance.prune": async () => { throw new Error("boom"); } };
     const first = await drain(db, failing);
     expect(first.retried).toBeGreaterThanOrEqual(1);
     const [afterFirst] = await db.select().from(schema.jobs).where(eq(schema.jobs.idempotencyKey, "test:always-fails"));

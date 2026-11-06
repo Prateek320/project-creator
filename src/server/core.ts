@@ -4,6 +4,7 @@ import type { DB, Tx } from "@/db";
 import * as schema from "@/db/schema";
 import { assertBalanced, type LedgerLine } from "@/domain/ledger";
 import { DomainError } from "@/domain/types";
+import { enqueue } from "./jobs";
 
 const { users, memberships, creatorProfiles, campaigns, agreements, auditEvents, notifications, ledgerEntries } = schema;
 
@@ -92,10 +93,15 @@ export async function audit(
   await db.insert(auditEvents).values({ actorUserId: actor?.userId ?? null, entityType, entityId, action, payload, reason });
 }
 
+/**
+ * In-app notification plus an email through the outbox, in the caller's transaction: the email job
+ * exists if and only if the notification committed.
+ */
 export async function notify(db: Executor, userIds: string[], title: string, body: string, href?: string) {
   const unique = [...new Set(userIds)].filter(Boolean);
   if (unique.length === 0) return;
-  await db.insert(notifications).values(unique.map((userId) => ({ userId, title, body, href })));
+  const rows = await db.insert(notifications).values(unique.map((userId) => ({ userId, title, body, href }))).returning({ id: notifications.id });
+  for (const r of rows) await enqueue(db, "email.send", { notificationId: r.id }, { key: `email.send:${r.id}`, maxAttempts: 6 });
 }
 
 export async function brandUserIds(db: Executor, orgId: string): Promise<string[]> {

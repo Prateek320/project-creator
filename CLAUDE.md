@@ -5,12 +5,13 @@ Build plan and flow audit: `./docs/backend-plan.md`.
 
 ### Stack (moment: validate → early grow)
 - App: Next.js 15 monolith (App Router, server actions), TypeScript strict
-- Data: PostgreSQL (Neon, Mumbai) via Drizzle; PGlite only for local demo
+- Data: PostgreSQL (Neon, Singapore; branches main = production, staging, dev) via Drizzle; PGlite only for the zero-setup demo
 - Jobs: Postgres job table drained by Vercel Cron
-- Auth: Clerk (organisations, MFA) — planned, decision D2
-- Email: Resend via outbox — planned
+- Auth: Clerk (organisations, MFA) via `src/server/identity.ts`; demo keeps the cookie account picker
+- Email: Resend via the outbox (`notify()` queues `email.send`)
 - Payments: mock provider; record-only payouts next; payment partner in Phase 4
-- Errors: Sentry — planned
+- Errors: Sentry (errors only, no personal data); uptime via `.github/workflows/uptime.yml`
+- Privacy: consent log + data requests (export, erasure) as jobs; see ADR-008
 
 ### Agent Rules
 - DO NOT add infrastructure that isn't solving a problem you have today.

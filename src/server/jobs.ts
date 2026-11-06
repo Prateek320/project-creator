@@ -17,8 +17,9 @@ import { sql } from "drizzle-orm";
 import type { DB } from "@/db";
 import { jobs } from "@/db/schema";
 import { audit, type Executor } from "./core";
+import { reportError } from "./observability";
 
-export type JobKind = "payout.transfer" | "funding.collect" | "maintenance.prune";
+export type JobKind = "payout.transfer" | "funding.collect" | "maintenance.prune" | "email.send" | "privacy.export" | "privacy.erasure";
 export type JobHandler = (db: DB, payload: Record<string, unknown>) => Promise<void>;
 
 export async function enqueue(
@@ -96,7 +97,7 @@ export async function drain(
         if (job.attempts >= job.max_attempts) {
           await db.execute(sql`update jobs set status = 'dead', locked_at = null, locked_by = null, last_error = ${message}, updated_at = now() where id = ${job.id}`);
           await audit(db, null, "job", job.id, "job_dead", { kind: job.kind, attempts: job.attempts, error: message });
-          console.error(`[jobs] ${job.kind} ${job.id} is dead after ${job.attempts} attempts: ${message}`);
+          reportError(new Error(`[jobs] ${job.kind} ${job.id} is dead after ${job.attempts} attempts: ${message}`, { cause: err }), { job_kind: job.kind });
           out.dead++;
         } else {
           const runAt = new Date(Date.now() + backoffMs(job.attempts));

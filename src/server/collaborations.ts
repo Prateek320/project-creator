@@ -46,6 +46,8 @@ export async function applyToCampaign(
   if (!c || c.status === "draft" || c.visibility !== "public") throw new NotFoundError("Campaign");
   if (c.status !== "published") throw new DomainError("This campaign is not accepting applications");
   if (c.applyBy && c.applyBy < new Date()) throw new DomainError("Applications for this campaign have closed");
+  const [me] = await db.select({ niches: creatorProfiles.niches }).from(creatorProfiles).where(eq(creatorProfiles.id, actor.creatorProfileId));
+  if (!me?.niches.length) throw new DomainError("Complete your profile (niches and audience) before applying");
   if (input.pitch.trim().length < 30) throw new DomainError("Write a pitch of at least 30 characters so the brand can evaluate fit");
   if (!Number.isSafeInteger(input.proposedRateMinor) || input.proposedRateMinor < 0) throw new DomainError("Enter a valid rate");
   const links = input.portfolioLinks.filter((l) => /^https?:\/\//.test(l)).slice(0, 5);

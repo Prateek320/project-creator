@@ -11,3 +11,4 @@ _to_delete
 .data-e2e
 test-results
 playwright-report
+.neon

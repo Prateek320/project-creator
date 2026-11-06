@@ -29,6 +29,20 @@
       "when": 1793951195485,
       "tag": "0003_drop_plaintext_webhook_secret",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793957731550,
+      "tag": "0004_clerk_org_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793958612275,
+      "tag": "0005_privacy",
+      "breakpoints": true
     }
   ]
 }

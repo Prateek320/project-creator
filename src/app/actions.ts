@@ -20,6 +20,8 @@ import * as finance from "@/server/finance";
 import { csvList, date, formulaFrom, int, list, money, safeBack, str } from "@/server/forms";
 import { assertDemo, isDemo } from "@/server/env";
 import { runJobs } from "@/server/job-handlers";
+import { reportError } from "@/server/observability";
+import * as privacy from "@/server/privacy";
 import { rotateWebhookSecret } from "@/server/webhooks";
 import { clearSession, homeFor, requireActor, setSession } from "@/server/session";
 
@@ -43,7 +45,7 @@ async function act(fd: FormData, fallback: string, fn: (db: DB, actor: Actor) =>
   } catch (err) {
     if (err instanceof DomainError) target = withParam(back, "error", err.message);
     else {
-      console.error(err);
+      reportError(err, { action: back.split("?")[0]! });
       target = withParam(back, "error", "Something went wrong. Nothing was changed — please try again.");
     }
   }
@@ -81,6 +83,27 @@ export async function resetDemo(fd: FormData) {
     await seed(db);
     await clearSession();
     return { notice: "Demo data reset — sign in again", to: "/login" };
+  });
+}
+
+// ---------- privacy ----------
+export async function setProductEmailsAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    const granted = str(fd, "granted") === "on";
+    await privacy.setProductEmails(db, actor, granted);
+    return granted ? "Product emails turned on" : "Product emails turned off";
+  });
+}
+export async function requestExportAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    await db.transaction((tx) => privacy.requestExport(tx, actor));
+    return "Export requested. We'll notify you when it's ready to download.";
+  });
+}
+export async function requestErasureAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    await db.transaction((tx) => privacy.requestErasure(tx, actor, str(fd, "confirm_email", 320)));
+    return "Deletion requested. We'll check nothing is still owed, then delete your account and sign you out.";
   });
 }
 

@@ -5,9 +5,12 @@
  */
 import { defineConfig } from "@playwright/test";
 
-const build = "NEXT_DIST_DIR=.next-e2e npx next build";
+// Next.js loads .env.local (Neon DATABASE_URL, Clerk keys) unless a variable is already set, even to "".
+// Blank them so e2e always runs on its own throwaway PGlite database and never touches a real Neon branch.
+const isolate = "DATABASE_URL= DATABASE_URL_UNPOOLED= NEON_BRANCH= NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY= CLERK_SECRET_KEY=";
+const build = `${isolate} NEXT_DIST_DIR=.next-e2e npx next build`;
 const start = (port: number, env: string) =>
-  `NEXT_DIST_DIR=.next-e2e APP_ENV=${env} PGLITE_DIR=.data-e2e/${env} SESSION_SECRET=e2e-session CRON_SECRET=e2e-cron ENCRYPTION_KEY=${Buffer.alloc(32, 7).toString("base64")} npx next start -p ${port}`;
+  `${isolate} NEXT_DIST_DIR=.next-e2e APP_ENV=${env} PGLITE_DIR=.data-e2e/${env} SESSION_SECRET=e2e-session CRON_SECRET=e2e-cron ENCRYPTION_KEY=${Buffer.alloc(32, 7).toString("base64")} npx next start -p ${port}`;
 
 export default defineConfig({
   testDir: "./e2e",

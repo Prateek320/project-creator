@@ -60,3 +60,36 @@ export function encryptionKey(): Buffer {
   if (key.length !== 32) throw new Error("ENCRYPTION_KEY must be 32 bytes, base64-encoded (openssl rand -base64 32)");
   return key;
 }
+
+/** Both Clerk keys present. Without them (zero-setup demo, CI) Clerk stays off entirely. */
+export const clerkConfigured = () => Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY);
+
+/**
+ * How getActor() identifies people.
+ *  - cookie: the demo account picker (demo), or a developer's machine without Clerk keys (development).
+ *  - clerk:  everywhere Clerk keys are set (staging and production must set them).
+ *  - off:    staging/production without Clerk keys. Fails closed: public pages render, nobody can sign in.
+ */
+let warnedOff = false;
+export function authMode(): "cookie" | "clerk" | "off" {
+  if (isDemo()) return "cookie";
+  if (clerkConfigured()) return "clerk";
+  if (isLocal()) return "cookie";
+  if (!warnedOff) {
+    warnedOff = true;
+    console.error(`[auth] APP_ENV=${appEnv()} has no Clerk keys (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY): sign-in is off`);
+  }
+  return "off";
+}
+
+/** Verified email addresses that become platform operations (admin) users at onboarding. */
+export const opsEmails = (): Set<string> =>
+  new Set((process.env.OPS_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
+
+/** Public base URL for links in emails, e.g. https://staging.proovd.in. */
+export function appUrl(): string {
+  const v = process.env.APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+  if (v) return v.replace(/\/$/, "");
+  if (isLocal()) return "http://localhost:3000";
+  throw new Error(`APP_URL must be set when APP_ENV=${appEnv()}`);
+}

@@ -6,7 +6,7 @@ import { Badge, ButtonLink } from "@/components/ui";
 import { SettlementReceipt } from "@/components/settlement";
 import { formatINR } from "@/domain/money";
 import { isDemo } from "@/server/env";
-import { getActor, homeFor } from "@/server/session";
+import { continueUrl, identityState } from "@/server/session";
 
 const steps = [
   { icon: FileText, t: "Publish a clear brief", b: "Objective, deliverables, dates, usage rights and the payout formula — all visible before anyone applies." },
@@ -22,17 +22,20 @@ const models = [
 ];
 
 export default async function Landing() {
-  const actor = await getActor();
+  const state = await identityState();
+  const demo = isDemo();
+  // Outside the demo there is no account picker: people sign up or sign in with Clerk.
+  const entry = (as: "brand" | "creator") => (demo ? `/login?as=${as}` : "/sign-up");
   return (
     <div className="min-h-dvh overflow-x-clip">
 
       <header className="relative mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Logo size={30} />
         <nav className="flex items-center gap-2">
-          {actor ? (
-            <ButtonLink href={homeFor(actor)} size="sm">Open workspace <ArrowRight size={14} aria-hidden /></ButtonLink>
+          {state ? (
+            <ButtonLink href={continueUrl(state)} size="sm">{state.kind === "ok" ? "Open workspace" : "Finish setup"} <ArrowRight size={14} aria-hidden /></ButtonLink>
           ) : (
-            <ButtonLink href="/login" variant="secondary" size="sm">Sign in</ButtonLink>
+            <ButtonLink href={demo ? "/login" : "/sign-in"} variant="secondary" size="sm">Sign in</ButtonLink>
           )}
         </nav>
       </header>
@@ -48,8 +51,8 @@ export default async function Landing() {
               Every collaboration runs on one agreement both sides accept. Outcomes are verified, not claimed. The settlement shows its working, line by line.
             </p>
             <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-2">
-              <EntryLink href="/login?as=brand" title="I'm a brand or agency" body="Launch a campaign, hire on evidence, pay for verified results." primary />
-              <EntryLink href="/login?as=creator" title="I'm a creator" body="See the payout formula before you apply. Build a track record you own." />
+              <EntryLink href={entry("brand")} title="I'm a brand or agency" body="Launch a campaign, hire on evidence, pay for verified results." primary />
+              <EntryLink href={entry("creator")} title="I'm a creator" body="See the payout formula before you apply. Build a track record you own." />
             </div>
           </div>
 
@@ -123,15 +126,15 @@ export default async function Landing() {
             <h2 className="max-w-2xl text-3xl font-bold tracking-[-0.02em] text-white sm:text-4xl">Who actually delivers? Every completed campaign makes the answer clearer.</h2>
             <p className="mt-4 max-w-xl text-white/75">Verified outcomes build a track record creators own and brands can trust.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/login?as=brand" className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-ink transition-colors hover:bg-white/90">Try the brand demo</Link>
-              <Link href="/login?as=creator" className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10">Try the creator demo</Link>
+              <Link href={entry("brand")} className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-ink transition-colors hover:bg-white/90">{demo ? "Try the brand demo" : "Start as a brand"}</Link>
+              <Link href={entry("creator")} className="inline-flex h-11 items-center rounded-full border border-white/30 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10">{demo ? "Try the creator demo" : "Join as a creator"}</Link>
             </div>
           </div>
         </section>
       </main>
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-line-2 px-4 py-8 text-xs text-muted sm:px-6">
-        <span className="inline-flex items-center gap-2"><Logo size={20} className="scale-90" />{isDemo() ? " Demo build. No real money moves." : ""}</span>
-        <span>Payments via an approved provider only after legal review.</span>
+        <span className="inline-flex items-center gap-2"><Logo size={20} className="scale-90" />{demo ? " Demo build. No real money moves." : ""}</span>
+        <span className="inline-flex items-center gap-4"><Link href="/privacy" className="hover:text-ink">Privacy</Link><span>Payments via an approved provider only after legal review.</span></span>
       </footer>
     </div>
   );

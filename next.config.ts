@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 /**
  * Content Security Policy, report-only for now: Next.js and the theme script inject inline scripts,
@@ -8,11 +9,15 @@ import type { NextConfig } from "next";
 const csp = [
   "default-src 'self'",
   // React's dev build evaluates strings for debugging; production builds don't need unsafe-eval.
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  // Clerk: its frontend API on *.clerk.accounts.dev (dev) or clerk.<domain> (prod), avatars on
+  // img.clerk.com, and Cloudflare's bot-protection challenge on sign-up.
+  `script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://challenges.cloudflare.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.clerk.accounts.dev https://clerk-telemetry.com",
+  "frame-src https://challenges.cloudflare.com",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -25,6 +30,8 @@ const nextConfig: NextConfig = {
   // PGlite ships WASM + data files; keep it out of the server bundle.
   serverExternalPackages: ["@electric-sql/pglite"],
   poweredByHeader: false,
+  // Lets the browser Sentry client tag events with the environment.
+  env: { NEXT_PUBLIC_APP_ENV: process.env.APP_ENV ?? "" },
   async headers() {
     return [
       {
@@ -43,4 +50,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Uploads source maps only when SENTRY_AUTH_TOKEN (plus SENTRY_ORG / SENTRY_PROJECT) is set, i.e. on Vercel.
+// Browser events are tunnelled through /monitoring, so the CSP stays 'self' and ad blockers don't drop them.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  telemetry: false,
+  tunnelRoute: "/monitoring",
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

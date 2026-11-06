@@ -19,10 +19,12 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.25",
     "@electric-sql/pglite": "^0.3.8",
     "@fontsource-variable/archivo": "^5.2.8",
     "@fontsource-variable/figtree": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@sentry/nextjs": "^11.11.0",
     "drizzle-orm": "^0.44.5",
     "lucide-react": "^0.544.0",
     "next": "^15.5.29",
@@ -32,6 +34,8 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@neon/config": "^1.11.3",
+    "@neon/env": "^1.6.15",
     "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22.18.0",

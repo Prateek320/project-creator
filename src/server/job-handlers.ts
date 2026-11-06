@@ -5,19 +5,25 @@
 import { sql } from "drizzle-orm";
 import type { DB } from "@/db";
 import { processFundingCollect } from "./campaigns";
+import { processEmailSend } from "./email";
 import { processPayoutTransfer } from "./finance";
+import { expireExports, processErasure, processExport } from "./privacy";
 import { drain, enqueue, type DrainResult, type JobHandler, type JobKind } from "./jobs";
 
-/** Deletes finished jobs after 14 days and rate-limit windows idle for a day. Dead jobs are kept for review. */
+/** Deletes finished jobs after 14 days and rate-limit windows idle for a day; clears expired data exports. Dead jobs are kept for review. */
 async function prune(db: DB) {
   await db.execute(sql`delete from jobs where status = 'done' and updated_at < now() - interval '14 days'`);
   await db.execute(sql`delete from rate_limits where window_start < now() - interval '1 day'`);
+  await expireExports(db);
 }
 
 export const HANDLERS: Record<JobKind, JobHandler> = {
   "payout.transfer": (db, p) => processPayoutTransfer(db, String(p.transferId)),
   "funding.collect": (db, p) => processFundingCollect(db, String(p.campaignId)),
   "maintenance.prune": (db) => prune(db),
+  "email.send": (db, p) => processEmailSend(db, String(p.notificationId)),
+  "privacy.export": (db, p) => processExport(db, String(p.requestId)),
+  "privacy.erasure": (db, p) => processErasure(db, String(p.requestId)),
 };
 
 export function runJobs(db: DB, opts?: Parameters<typeof drain>[2]): Promise<DrainResult> {

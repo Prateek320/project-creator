@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { resetDemo } from "@/app/actions";
-import { isDemo } from "@/server/env";
+import { authMode, isDemo } from "@/server/env";
+import { OrganizationProfile } from "@clerk/nextjs";
+import { PrivacySection } from "@/components/privacy-section";
 import { CopyButton, RotateSecret, SubmitButton } from "@/components/client";
 import { ThemeToggle } from "@/components/theme";
 import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip, fmtDateTime } from "@/components/ui";
@@ -13,6 +15,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
   const actor = await requireActor("brand");
   const sp = await searchParams;
   const db = await getDb();
+  const clerk = authMode() === "clerk";
   const [org] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!));
   const team = await db.select({ m: schema.memberships, u: schema.users }).from(schema.memberships).innerJoin(schema.users, eq(schema.memberships.userId, schema.users.id)).where(eq(schema.memberships.organizationId, org!.id));
   const [sample] = await db
@@ -64,8 +67,18 @@ export default async function Settings({ searchParams }: { searchParams: Promise
               </li>
             ))}
           </ul>
-          <p className="border-t border-line-2 px-6 py-4 text-xs text-muted">Inviting teammates arrives with managed authentication (MFA required for owners).</p>
+          {clerk ? (
+            <p className="border-t border-line-2 px-6 py-4 text-xs text-muted">Owners invite and remove teammates below. Owners must use two-step verification.</p>
+          ) : (
+            <p className="border-t border-line-2 px-6 py-4 text-xs text-muted">Inviting teammates needs managed sign-in, which the demo doesn&apos;t use.</p>
+          )}
         </Card>
+        {clerk && (
+          <div className="lg:col-span-2" id="members">
+            <OrganizationProfile routing="hash" />
+          </div>
+        )}
+        <div className="lg:col-span-2"><PrivacySection actor={actor} back="/brand/settings" /></div>
         <Card className="lg:col-span-2" id="webhook">
           <CardHeader title="Conversion webhook" description="Send signups, leads or orders from your backend. Signed with HMAC-SHA256; replays of the same event_id are counted once." />
           <CardBody className="space-y-4 text-sm">
