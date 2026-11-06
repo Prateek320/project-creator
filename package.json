@@ -24,6 +24,7 @@
     "@fontsource-variable/archivo": "^5.2.8",
     "@fontsource-variable/figtree": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@sentry/nextjs": "^11.11.0",
     "drizzle-orm": "^0.44.5",
     "lucide-react": "^0.544.0",
     "next": "^15.5.29",

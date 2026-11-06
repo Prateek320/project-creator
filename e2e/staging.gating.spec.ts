@@ -28,3 +28,10 @@ test("without Clerk keys, staging fails closed: no sign-in, no onboarding, no wo
   await page.goto("/brand");
   await expect(page).toHaveURL(/\/sign-in$/);
 });
+
+test("the privacy notice is public and says where data is stored", async ({ page }) => {
+  expect((await page.goto("/privacy"))?.status()).toBe(200);
+  await expect(page.getByText("stored in Singapore")).toBeVisible();
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/privacy");
+});

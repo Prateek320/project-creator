@@ -20,6 +20,7 @@ import * as finance from "@/server/finance";
 import { csvList, date, formulaFrom, int, list, money, safeBack, str } from "@/server/forms";
 import { assertDemo, isDemo } from "@/server/env";
 import { runJobs } from "@/server/job-handlers";
+import { reportError } from "@/server/observability";
 import * as privacy from "@/server/privacy";
 import { rotateWebhookSecret } from "@/server/webhooks";
 import { clearSession, homeFor, requireActor, setSession } from "@/server/session";
@@ -44,7 +45,7 @@ async function act(fd: FormData, fallback: string, fn: (db: DB, actor: Actor) =>
   } catch (err) {
     if (err instanceof DomainError) target = withParam(back, "error", err.message);
     else {
-      console.error(err);
+      reportError(err, { action: back.split("?")[0]! });
       target = withParam(back, "error", "Something went wrong. Nothing was changed — please try again.");
     }
   }

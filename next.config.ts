@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 /**
  * Content Security Policy, report-only for now: Next.js and the theme script inject inline scripts,
@@ -29,6 +30,8 @@ const nextConfig: NextConfig = {
   // PGlite ships WASM + data files; keep it out of the server bundle.
   serverExternalPackages: ["@electric-sql/pglite"],
   poweredByHeader: false,
+  // Lets the browser Sentry client tag events with the environment.
+  env: { NEXT_PUBLIC_APP_ENV: process.env.APP_ENV ?? "" },
   async headers() {
     return [
       {
@@ -47,4 +50,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Uploads source maps only when SENTRY_AUTH_TOKEN (plus SENTRY_ORG / SENTRY_PROJECT) is set, i.e. on Vercel.
+// Browser events are tunnelled through /monitoring, so the CSP stays 'self' and ad blockers don't drop them.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  telemetry: false,
+  tunnelRoute: "/monitoring",
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
+});

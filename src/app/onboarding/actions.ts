@@ -11,10 +11,11 @@ import { DomainError } from "@/domain/types";
 import { authMode, opsEmails } from "@/server/env";
 import { str } from "@/server/forms";
 import { onboard, setupBrandOrganization } from "@/server/identity";
+import { reportError } from "@/server/observability";
 import { continueUrl, identityState, sessionClaims } from "@/server/session";
 
 const fail = (path: string, err: unknown): never => {
-  if (!(err instanceof DomainError)) console.error(err);
+  if (!(err instanceof DomainError)) reportError(err, { action: path });
   const msg = err instanceof DomainError ? err.message : "Something went wrong. Nothing was changed — please try again.";
   redirect(`${path}?error=${encodeURIComponent(msg)}`);
 };

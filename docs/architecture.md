@@ -90,12 +90,12 @@ flowchart LR
 - **When to replace:** at ~10k MAU if pricing hurts, migrate to Auth.js (users keyed by `auth_subject`, so migration is contained).
 
 ### Resend
-- **Role:** transactional email through the outbox.
+- **Role:** transactional email through the outbox. `notify()` writes the in-app notification and an `email.send` job in one transaction; the job reads the address at send time (no PII in the queue) and passes the notification id as Resend's idempotency key. Team invites are sent by Clerk.
 - **Why now:** offers, reviews and payouts need to reach people who aren't logged in.
 - **When to replace:** add WhatsApp when creator email open rate < 30%.
 
 ### Sentry (free tier) + uptime check
-- **Role:** error alerts, especially on money and webhook paths.
+- **Role:** error alerts, especially on money and webhook paths. Errors only (no tracing), no request bodies, headers, cookies or user info; browser events tunnelled through `/monitoring`. Dead jobs and unexpected server-action errors are reported. Uptime: a GitHub Actions schedule calls `/api/health` every 10 minutes (`UPTIME_URLS`); move to an external monitor before real customers.
 - **Why now:** real money and real users; silent failures are unacceptable.
 - **When to replace:** add tracing when p95 latency is a problem.
 
@@ -147,6 +147,12 @@ flowchart LR
 - **Tradeoff:** erasure is pseudonymisation, documented in the privacy notice. Users in India pay one extra network hop (~50–70 ms per request) to Singapore, and personal data is stored outside India — the privacy notice must say so.
 - **Revisit when:** legal advice requires data stored in India (DPDP allows cross-border transfer except to countries the government restricts; confirm with counsel), or Neon adds Mumbai.
 
+### ADR-008: Privacy requests as jobs, erasure by pseudonymisation
+- **Choice:** consent log (append-only, versioned notice) at sign-up; `data_requests` for export and erasure, each done by a job. Erasure deletes the Clerk user, then pseudonymises `users`/`creator_profiles`, deletes portfolio and notifications, and keeps ledger, audit, agreements and transfers by id. Blocked while collaborations, payouts or disputes are open, or for a brand's only owner.
+- **Why:** DPDP rights must be answered within 90 days; money records must survive for tax and accounting.
+- **Tradeoff:** blocked requests need a person to retry later; ops see them in /admin/privacy.
+- **Revisit when:** legal review of the privacy notice, or a request type we can't serve automatically.
+
 ### ADR-006: Separate demo, staging and production environments
 - **Choice:** `APP_ENV` controls seed, demo login, reset and simulators; only `demo` has them.
 - **Why:** seed currently runs on any empty DB and demo actions are always registered.
@@ -190,6 +196,7 @@ flowchart LR
 |------|--------|---------|
 | 2026-11-05 | Initial generation (brownfield review before moving from demo to beta) | — |
 | 2026-11-06 | Neon project created | Region is Singapore (Mumbai unavailable on Neon); Vercel functions moved to `sin1`. Neon branches: main = production, staging, dev. |
+| 2026-11-06 | Phase 0 slice 2 (accounts) | Clerk mapped onto getActor (ADR-004 detail), Resend via outbox, Sentry + uptime workflow, ADR-008 privacy requests. Staging = separate Vercel project (cron only runs on production deployments); migrations run in the Vercel build. Runbooks in docs/runbooks/. |
 | 2026-11-06 | Phase 0 slice 1 (hardening) | ADR-006 implemented; ADR-007 added (jobs table contract). Postgres rate limiter, encrypted webhook secrets with 24 h rotation overlap, CI. |
 
 ---
