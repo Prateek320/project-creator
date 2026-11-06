@@ -1,0 +1,38 @@
+# Drains the job queue (emails, payouts, privacy requests) on deployments without per-minute
+# Vercel Cron. Vercel Hobby allows cron only once a day (vercel.json keeps a daily run as a backstop).
+# Repository secrets: JOBS_URLS = space-separated job URLs, e.g. https://proovd-staging.vercel.app/api/jobs/run
+#                     CRON_SECRET = the same value as the deployment's CRON_SECRET
+# One secret is shared, so every listed deployment must use the same CRON_SECRET.
+# GitHub runs schedules every 5 minutes at best and may delay them; on Vercel Pro, set the
+# vercel.json cron back to "* * * * *" and drop this workflow.
+name: Jobs
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: jobs
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Call the job runner
+        env:
+          URLS: ${{ secrets.JOBS_URLS }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$URLS" ] || [ -z "$CRON_SECRET" ]; then echo "JOBS_URLS or CRON_SECRET not set; skipping"; exit 0; fi
+          failed=0
+          for url in $URLS; do
+            code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 70 -H "Authorization: Bearer $CRON_SECRET" "$url" || echo 000)
+            echo "$url -> $code $(head -c 200 /tmp/body 2>/dev/null)"
+            [ "$code" = "200" ] || failed=1
+          done
+          exit $failed

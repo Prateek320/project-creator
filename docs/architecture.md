@@ -196,6 +196,7 @@ flowchart LR
 |------|--------|---------|
 | 2026-11-05 | Initial generation (brownfield review before moving from demo to beta) | — |
 | 2026-11-06 | Neon project created | Region is Singapore (Mumbai unavailable on Neon); Vercel functions moved to `sin1`. Neon branches: main = production, staging, dev. |
+| 2026-11-06 | Staging on Vercel Hobby | No card for Pro yet: vercel.json cron is daily (Hobby limit) and a GitHub Actions schedule calls /api/jobs/run every ~5 min. Back to per-minute Vercel Cron on Pro before launch. |
 | 2026-11-06 | Phase 0 slice 2 (accounts) | Clerk mapped onto getActor (ADR-004 detail), Resend via outbox, Sentry + uptime workflow, ADR-008 privacy requests. Staging = separate Vercel project (cron only runs on production deployments); migrations run in the Vercel build. Runbooks in docs/runbooks/. |
 | 2026-11-06 | Phase 0 slice 1 (hardening) | ADR-006 implemented; ADR-007 added (jobs table contract). Postgres rate limiter, encrypted webhook secrets with 24 h rotation overlap, CI. |
 

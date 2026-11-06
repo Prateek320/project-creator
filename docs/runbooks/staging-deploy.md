@@ -31,7 +31,11 @@ branches, or leave them without database variables: without `DATABASE_URL` and `
 | `PRIVACY_CONTACT_EMAIL` | shown on /privacy |
 | `PAYMENT_PROVIDER`, `SOCIAL_PROVIDER` | `mock` |
 
-Vercel Cron sends `Authorization: Bearer $CRON_SECRET` to `/api/jobs/run` automatically.
+Vercel Cron sends `Authorization: Bearer $CRON_SECRET` to `/api/jobs/run`. On the **Hobby** plan cron
+runs only once a day (vercel.json: `0 3 * * *`), so `.github/workflows/jobs.yml` drains the queue every
+~5 minutes instead: set repository secrets `JOBS_URLS` and `CRON_SECRET`. Production on **Pro**: set the
+vercel.json cron to `* * * * *` and remove the workflow. Hobby is for non-commercial use; move to Pro
+before real customers.
 
 ## Clerk settings (each instance)
 - Organizations on; membership optional (creators have personal accounts); default role `org:member`, creator role `org:admin`.
