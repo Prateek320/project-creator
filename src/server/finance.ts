@@ -1,6 +1,7 @@
 /** Attribution ingest, settlement evaluation, ledger, payouts and disputes. */
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
+import type { DB } from "@/db";
 import * as schema from "@/db/schema";
 import { parseEvent } from "@/domain/attribution";
 import { evaluateSettlement } from "@/domain/compensation";
@@ -33,6 +34,7 @@ import {
   type Executor,
 } from "./core";
 import { assertDemo } from "./env";
+import { enqueue } from "./jobs";
 import { getPaymentProvider } from "./providers";
 
 const { attributionEvents, agreements, campaigns, ledgerEntries, paymentTransfers, disputes, milestones, creatorProfiles, organizations } =
@@ -290,43 +292,74 @@ export async function approveSettlement(db: Executor, actor: Actor, rootAgreemen
 }
 
 /** Pays out the creator's approved, undisputed balance via the payment provider adapter. */
+/**
+ * Requests a payout of the approved balance. Nothing external happens here: one transaction records
+ * a pending transfer and enqueues `payout.transfer`; the job calls the provider and settles it.
+ * A double submit computes the same idempotency key and is absorbed by its unique constraint.
+ */
 export async function payoutCreator(db: Executor, actor: Actor, rootAgreementId: string) {
   if (actor.role !== "brand" && actor.role !== "admin") throw new ForbiddenError();
   const s = await getSettlement(db, actor, rootAgreementId);
   const amount = s.balances.creator_payable;
   if (amount <= 0) throw new DomainError("No approved balance to pay out");
+  if (s.transfers.some((t) => t.state === "transfer_pending")) throw new DomainError("A payout is already processing");
   const lastSettle = [...s.entries].reverse().find((e) => e.account === "creator_payable" && e.amountMinor > 0);
   const priorAttempts = s.transfers.filter((t) => t.ledgerTransactionGroupId === lastSettle?.transactionGroupId).length;
   const idempotencyKey = `payout:${s.collab.root.id}:${lastSettle?.transactionGroupId ?? "none"}:${priorAttempts}`;
-  const provider = getPaymentProvider();
-  const res = await provider.transfer({ idempotencyKey, amountMinor: amount, currency: "INR", destination: `creator:${s.collab.creator.id}` });
   await db.transaction(async (tx) => {
-    const existing = await tx.select().from(paymentTransfers).where(eq(paymentTransfers.providerRef, res.providerRef));
-    if (existing.length > 0) return; // retried request, provider already processed
-    await tx.insert(paymentTransfers).values({
-      provider: provider.name,
-      providerRef: res.providerRef,
-      idempotencyKey,
-      ledgerTransactionGroupId: lastSettle?.transactionGroupId ?? crypto.randomUUID(),
-      agreementId: s.collab.root.id,
-      amountMinor: amount,
-      state: res.status === "paid" ? "paid" : "failed",
-    });
+    const [t] = await tx
+      .insert(paymentTransfers)
+      .values({
+        provider: getPaymentProvider().name,
+        idempotencyKey,
+        ledgerTransactionGroupId: lastSettle?.transactionGroupId ?? crypto.randomUUID(),
+        agreementId: s.collab.root.id,
+        amountMinor: amount,
+        state: "transfer_pending",
+      })
+      .onConflictDoNothing({ target: paymentTransfers.idempotencyKey })
+      .returning({ id: paymentTransfers.id });
+    if (!t) return; // duplicate submit: the first request already queued this payout
+    await audit(tx, actor, "agreement", s.collab.root.id, "payout_requested", { amountMinor: amount, transferId: t.id });
+    await enqueue(tx, "payout.transfer", { transferId: t.id }, { key: `payout.transfer:${t.id}` });
+  });
+}
+
+/**
+ * Job handler for `payout.transfer`. Safe to run more than once: it no-ops unless the transfer is
+ * still pending, the provider call reuses the transfer's idempotency key, and the settle step only
+ * applies if no other run settled it first.
+ */
+export async function processPayoutTransfer(db: DB, transferId: string) {
+  const [t] = await db.select().from(paymentTransfers).where(eq(paymentTransfers.id, transferId));
+  if (!t || t.state !== "transfer_pending") return;
+  const [ag] = await db.select().from(agreements).where(eq(agreements.id, t.agreementId));
+  if (!ag) throw new Error(`Agreement ${t.agreementId} missing for transfer ${t.id}`);
+  const [campaign] = await db.select().from(schema.campaigns).where(eq(schema.campaigns.id, ag.campaignId));
+  const provider = getPaymentProvider();
+  const res = await provider.transfer({ idempotencyKey: t.idempotencyKey, amountMinor: t.amountMinor, currency: t.currency, destination: `creator:${ag.creatorProfileId}` });
+  await db.transaction(async (tx) => {
+    const [settled] = await tx
+      .update(paymentTransfers)
+      .set({ state: res.status === "paid" ? "paid" : "failed", providerRef: res.providerRef })
+      .where(and(eq(paymentTransfers.id, t.id), eq(paymentTransfers.state, "transfer_pending")))
+      .returning({ id: paymentTransfers.id });
+    if (!settled) return; // another run settled it while the provider call was in flight
     if (res.status === "paid") {
       await postLedger(tx, {
         idempotencyKey: `payout-ledger:${res.providerRef}`,
-        campaignId: s.collab.campaign.id,
-        agreementId: s.collab.root.id,
-        creatorProfileId: s.collab.creator.id,
+        campaignId: ag.campaignId,
+        agreementId: t.agreementId,
+        creatorProfileId: ag.creatorProfileId,
         entryType: "payout",
-        lines: payoutLines(amount),
+        lines: payoutLines(t.amountMinor),
         referenceType: "provider_transfer",
         referenceId: res.providerRef,
-        memo: `Payout via ${provider.name} provider (test mode)`,
+        memo: `Payout via ${provider.name} provider${provider.isLive ? "" : " (test mode)"}`,
       });
     }
-    await audit(tx, actor, "agreement", s.collab.root.id, res.status === "paid" ? "payout_paid" : "payout_failed", { amountMinor: amount, providerRef: res.providerRef });
-    await notify(tx, [await creatorUserId(tx, s.collab.creator.id)], res.status === "paid" ? "Payout sent" : "Payout failed", `${s.collab.campaign.title}`, `/collaborations/${s.collab.root.id}/settlement`);
+    await audit(tx, null, "agreement", t.agreementId, res.status === "paid" ? "payout_paid" : "payout_failed", { amountMinor: t.amountMinor, providerRef: res.providerRef });
+    await notify(tx, [await creatorUserId(tx, ag.creatorProfileId)], res.status === "paid" ? "Payout sent" : "Payout failed", campaign?.title ?? "", `/collaborations/${t.agreementId}/settlement`);
   });
 }
 
@@ -348,8 +381,8 @@ export async function reverseTransfer(db: Executor, actor: Actor, transferId: st
       entryType: "reversal",
       lines: reversalLines(payoutLines(t.amountMinor)),
       referenceType: "provider_transfer",
-      referenceId: t.providerRef,
-      memo: `Compensating entry: transfer ${t.providerRef} reversed`,
+      referenceId: t.providerRef ?? t.id,
+      memo: `Compensating entry: transfer ${t.providerRef ?? t.id} reversed`,
     });
     await audit(tx, actor, "payment_transfer", t.id, "reversed", { amountMinor: t.amountMinor }, reason);
   });

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import { useActionState, useState, type ComponentProps } from "react";
+import { rotateWebhookSecretAction } from "@/app/actions";
 import { useFormStatus } from "react-dom";
 import { buttonClass, cx } from "./ui";
 
@@ -79,5 +80,49 @@ export function ShareButton({ path, text, className }: { path: string; text: str
     >
       {done ? "Link copied" : "Share link"}
     </button>
+  );
+}
+
+/**
+ * Webhook signing secret: generate or rotate, shown exactly once. The plaintext lives only in this
+ * component's state until the page is left; the server stores it encrypted.
+ */
+export function RotateSecret({ hasSecret, rotatedAt }: { hasSecret: boolean; rotatedAt: string | null }) {
+  const [state, action, pending] = useActionState(rotateWebhookSecretAction, null);
+  return (
+    <div className="rounded-xl border border-line bg-sunken p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="font-medium text-ink">Signing secret</div>
+          <p className="text-xs text-muted">
+            {state?.secret
+              ? "Copy it now. It won't be shown again."
+              : hasSecret
+                ? `Stored encrypted${rotatedAt ? `, last rotated ${rotatedAt}` : ""}. Rotating keeps the old secret working for 24 hours.`
+                : "No secret yet. Generate one to start sending events."}
+          </p>
+        </div>
+        {!state?.secret && (
+          <form action={action}>
+            <button
+              className={buttonClass("secondary", "sm")}
+              disabled={pending}
+              onClick={(e) => {
+                if (hasSecret && !window.confirm("Rotate the signing secret? The current one keeps working for 24 hours.")) e.preventDefault();
+              }}
+            >
+              {pending ? "Generating…" : hasSecret ? "Rotate secret" : "Generate secret"}
+            </button>
+          </form>
+        )}
+      </div>
+      {state?.secret && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <code className="break-all rounded-md border border-dashed border-stamp-line bg-surface px-2.5 py-1.5 text-xs">{state.secret}</code>
+          <CopyButton value={state.secret} />
+        </div>
+      )}
+      {state?.error && <p role="alert" className="mt-2 text-xs text-bad">{state.error}</p>}
+    </div>
   );
 }

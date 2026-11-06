@@ -7,3 +7,7 @@ next-env.d.ts
 .env.local
 .DS_Store
 _to_delete
+.next-e2e
+.data-e2e
+test-results
+playwright-report

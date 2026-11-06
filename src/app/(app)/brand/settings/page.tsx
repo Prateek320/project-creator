@@ -2,10 +2,9 @@ import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { resetDemo } from "@/app/actions";
 import { isDemo } from "@/server/env";
-import { CopyButton, SubmitButton } from "@/components/client";
+import { CopyButton, RotateSecret, SubmitButton } from "@/components/client";
 import { ThemeToggle } from "@/components/theme";
-import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip } from "@/components/ui";
-import { signPayload } from "@/domain/attribution";
+import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip, fmtDateTime } from "@/components/ui";
 import { requireActor } from "@/server/session";
 
 export const metadata = { title: "Team & settings" };
@@ -30,8 +29,16 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     occurred_at: new Date().toISOString().slice(0, 19) + "Z",
     value_minor: 0,
   });
-  const sig = signPayload(org!.webhookSecret, body);
-  const curl = `curl -X POST "$APP_URL/api/v1/attribution/events" \\\n  -H "content-type: application/json" \\\n  -H "x-pc-org: ${org!.id}" \\\n  -H "x-pc-signature: sha256=${sig}" \\\n  -d '${body}'`;
+  // The secret never reaches the page: the example signs with the brand's own copy at run time.
+  const curl = [
+    `BODY='${body}'`,
+    `SIG=$(printf %s "$BODY" | openssl dgst -sha256 -hmac "$PROOVD_WEBHOOK_SECRET" | sed 's/^.* //')`,
+    `curl -X POST "$APP_URL/api/v1/attribution/events" \\`,
+    `  -H "content-type: application/json" \\`,
+    `  -H "x-pc-org: ${org!.id}" \\`,
+    `  -H "x-pc-signature: sha256=$SIG" \\`,
+    `  -d "$BODY"`,
+  ].join("\n");
 
   return (
     <>
@@ -63,13 +70,12 @@ export default async function Settings({ searchParams }: { searchParams: Promise
           <CardHeader title="Conversion webhook" description="Send signups, leads or orders from your backend. Signed with HMAC-SHA256; replays of the same event_id are counted once." />
           <CardBody className="space-y-4 text-sm">
             <DL items={[["Endpoint", <code key="e">POST /api/v1/attribution/events</code>], ["Organisation ID", <code key="o" className="break-all">{org!.id}</code>]]} />
-            <details>
-              <summary className="font-medium text-accent">Reveal signing secret</summary>
-              <div className="mt-2 flex flex-wrap items-center gap-2"><code className="break-all rounded bg-black/5 px-2 py-1 text-xs">{org!.webhookSecret}</code><CopyButton value={org!.webhookSecret} /></div>
-              <p className="mt-1 text-xs text-muted">Demo only: in production this lives in a secrets manager, is shown once, and can be rotated.</p>
-            </details>
+            <RotateSecret
+              hasSecret={Boolean(org!.webhookSecretEnc)}
+              rotatedAt={org!.webhookSecretRotatedAt ? fmtDateTime(org!.webhookSecretRotatedAt) : null}
+            />
             <div>
-              <div className="mb-1 flex items-center justify-between"><span className="font-medium">Try it — a correctly signed request</span><CopyButton value={curl} label="Copy curl" /></div>
+              <div className="mb-1 flex items-center justify-between"><span className="font-medium">Try it: a correctly signed request (set PROOVD_WEBHOOK_SECRET first)</span><CopyButton value={curl} label="Copy curl" /></div>
               <pre className="overflow-x-auto rounded-2xl bg-ink p-4 text-xs leading-relaxed text-slate-100">{curl}</pre>
             </div>
           </CardBody>

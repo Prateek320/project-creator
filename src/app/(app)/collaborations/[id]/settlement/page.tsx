@@ -24,6 +24,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
   const clicks = s.events.filter((e) => e.eventType === "click" && e.validityState === "valid").length;
   const isBrand = c.side === "brand";
   const live = c.active && (c.active.status === "accepted" || c.active.status === "disputed");
+  const processing = s.transfers.find((t) => t.state === "transfer_pending");
   const key = `settle:${c.root.id}`;
   // Receipt shown once, right after the brand pays out.
   const lastPaid = sp.receipt === "1" ? [...s.transfers].reverse().find((t) => t.state === "paid") : undefined;
@@ -51,7 +52,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
       label: "Paid out",
       amountMinor: paid,
       state: payable > 0 ? "current" : paid > 0 && pending <= 0 ? "done" : "todo",
-      note: payable > 0 ? `${formatINR(payable)} ready to pay` : paid > 0 ? `Last paid ${fmtDate([...s.transfers].reverse().find((t) => t.state === "paid")?.createdAt)}` : "Nothing paid yet",
+      note: processing ? `Sending ${formatINR(processing.amountMinor)} now` : payable > 0 ? `${formatINR(payable)} ready to pay` : paid > 0 ? `Last paid ${fmtDate([...s.transfers].reverse().find((t) => t.state === "paid")?.createdAt)}` : "Nothing paid yet",
     },
     ...(held > 0 ? [{ label: "Held for dispute", amountMinor: held, state: "warn" as const, note: "Undisputed amount still payable" }] : []),
   ];
@@ -65,7 +66,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
   return (
     <>
       <Flash sp={sp} />
-      {live && <AutoRefresh every={15000} />}
+      {(live || processing) && <AutoRefresh every={processing ? 3000 : 15000} />}
       {lastPaid && (
         <PayoutReceipt amountMinor={lastPaid.amountMinor} creator={c.creator.displayName} campaign={c.campaign.title} providerRef={lastPaid.providerRef ?? "mock"} when={fmtDateTime(lastPaid.createdAt)} lines={receiptLines} />
       )}
@@ -126,7 +127,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
         <div className="space-y-8">
           {isBrand && (
             <Card>
-              <CardHeader title={pending > 0 ? "Waiting for your approval" : payable > 0 ? "Ready to pay" : "Next step"} />
+              <CardHeader title={pending > 0 ? "Waiting for your approval" : processing ? "Payout processing" : payable > 0 ? "Ready to pay" : "Next step"} />
               <CardBody className="space-y-3">
                 {c.campaign.fundingState !== "funded" && <Notice tone="warn">Fund the campaign before approving settlements.</Notice>}
                 {s.pendingApprovalMinor > 0 && (
@@ -138,7 +139,8 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                   </form>
                 )}
                 {s.pendingApprovalMinor < 0 && <Notice tone="warn">Earned is now {formatINR(-s.pendingApprovalMinor)} below what was approved (events were excluded). Open a dispute so operations can review an adjustment.</Notice>}
-                {s.balances.creator_payable > 0 && (
+                {processing && <Notice tone="info">Payout of {formatINR(processing.amountMinor)} is processing. This page updates when the provider confirms.</Notice>}
+                {s.balances.creator_payable > 0 && !processing && (
                   <form action={payoutAction}>
                     <input type="hidden" name="agreementId" value={c.root.id} />
                     <input type="hidden" name="back" value={back} />
@@ -164,7 +166,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
               <ul className="divide-y divide-line-2">
                 {s.transfers.map((t) => (
                   <li key={t.id} className="flex items-center justify-between px-6 py-4 text-sm">
-                    <div><Money minor={t.amountMinor} className="font-semibold" /><div title={t.providerRef ?? ""} className="text-[11px] text-muted">Ref …{(t.providerRef ?? "").slice(-8)} · {fmtDate(t.createdAt)}</div></div>
+                    <div><Money minor={t.amountMinor} className="font-semibold" /><div title={t.providerRef ?? ""} className="text-[11px] text-muted">{t.providerRef ? `Ref …${t.providerRef.slice(-8)}` : "Waiting for provider"} · {fmtDate(t.createdAt)}</div></div>
                     <StatusChip status={t.state} />
                   </li>
                 ))}

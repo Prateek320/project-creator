@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getDb } from "@/db";
 import { campaignTransitionAction, fundCampaignAction, refundAction } from "@/app/actions";
 import { SubmitButton } from "@/components/client";
+import { AutoRefresh } from "@/components/motion";
+import { formatINR } from "@/domain/money";
 import { EarningsPreview } from "@/components/formula";
 import { Avatar, Card, CardBody, CardHeader, DL, Flash, Money, Notice, StatusChip, fmtDate } from "@/components/ui";
 import { describeFormula } from "@/domain/compensation";
@@ -104,6 +106,12 @@ export default async function CampaignOverview({ params, searchParams }: { param
                 <div className="flex justify-between"><dt className="text-muted">Paid to creators</dt><dd><Money minor={b.creator_paid} /></dd></div>
                 {b.brand_refund > 0 && <div className="flex justify-between"><dt className="text-muted">Refunded</dt><dd><Money minor={b.brand_refund} /></dd></div>}
               </dl>
+              {c.fundingState === "funding_pending" && (
+                <>
+                  <AutoRefresh every={3000} />
+                  <Notice tone="info">Collecting {formatINR(c.budgetMinor)} from the payment provider. This page updates when it confirms.</Notice>
+                </>
+              )}
               {c.fundingState === "not_funded" && c.status !== "draft" && c.status !== "cancelled" && (
                 <form action={fundCampaignAction} className="pt-1">
                   <input type="hidden" name="campaignId" value={c.id} />

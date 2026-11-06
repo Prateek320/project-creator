@@ -8,6 +8,7 @@ import { randomBytes } from "node:crypto";
 import type { DB } from "./index";
 import * as schema from "./schema";
 import type { Formula } from "@/domain/types";
+import { encryptSecret } from "@/server/crypto";
 
 const DAY = 86_400_000;
 const rupees = (r: number) => r * 100;
@@ -67,19 +68,23 @@ export async function seed(db: DB): Promise<void> {
   const collab = await import("@/server/collaborations");
   const finance = await import("@/server/finance");
   const admin = await import("@/server/admin");
+  // Funding and payouts go through the job queue; the seed drains it so the demo starts settled.
+  const { runJobs } = await import("@/server/job-handlers");
+  const drainJobs = () => runJobs(db, { deadlineMs: 10_000 });
 
   const now = Date.now();
-  const secret = () => randomBytes(24).toString("hex");
+  // Webhook signing secrets are stored encrypted; brands see a new one once via "Rotate signing secret".
+  const secret = () => encryptSecret(randomBytes(32).toString("hex"));
 
   // ---------- organisations & users ----------
   const [glow, stride] = await db
     .insert(schema.organizations)
     .values([
-      { legalName: "Glow Botanics Pvt Ltd", displayName: "Glow Botanics", category: "Beauty & skincare D2C", website: "https://glowbotanics.example", verificationState: "verified", webhookSecret: secret() },
-      { legalName: "Urban Stride Apparel LLP", displayName: "Urban Stride", category: "Athleisure D2C", website: "https://urbanstride.example", verificationState: "verified", webhookSecret: secret() },
+      { legalName: "Glow Botanics Pvt Ltd", displayName: "Glow Botanics", category: "Beauty & skincare D2C", website: "https://glowbotanics.example", verificationState: "verified", webhookSecretEnc: secret() },
+      { legalName: "Urban Stride Apparel LLP", displayName: "Urban Stride", category: "Athleisure D2C", website: "https://urbanstride.example", verificationState: "verified", webhookSecretEnc: secret() },
     ])
     .returning();
-  await db.insert(schema.organizations).values({ legalName: "Chai & Co Foods", displayName: "Chai & Co", category: "Food & beverage", verificationState: "pending", webhookSecret: secret() });
+  await db.insert(schema.organizations).values({ legalName: "Chai & Co Foods", displayName: "Chai & Co", category: "Food & beverage", verificationState: "pending", webhookSecretEnc: secret() });
 
   const [aarav, nisha, ops] = await db
     .insert(schema.users)
@@ -213,6 +218,7 @@ export async function seed(db: DB): Promise<void> {
     true,
   );
   await campaignsSvc.fundCampaign(db, A, c4.id);
+  await drainJobs();
   const app4 = await apply("meera", c4.id, "My audience is 78% women aged 20–32 who struggle with winter dryness. I'd film a 7-day before/after with honest texture shots.", 6500);
   const ag4 = await collab.makeOffer(db, A, app4.id, { formula: c4.compensation });
   const M = await creatorActor("meera");
@@ -225,6 +231,7 @@ export async function seed(db: DB): Promise<void> {
   await finance.ingestEvents(db, glow!.id, events(c4.id, creatorIds.meera!, "signup", 50, now - 66 * DAY, 18 * DAY, "glow-lip"), "brand_webhook");
   await finance.approveSettlement(db, A, ag4.id);
   await finance.payoutCreator(db, A, ag4.id);
+  await drainJobs();
   await finance.completeCollaboration(db, A, ag4.id);
   await admin.leaveReview(db, A, ag4.id, { rating: 5, quality: 5, communication: 5, timeliness: 4, comment: "Clear, honest content and every deadline met. Would rebook." });
   await campaignsSvc.transitionCampaign(db, A, c4.id, "completed");
@@ -254,6 +261,7 @@ export async function seed(db: DB): Promise<void> {
     true,
   );
   await campaignsSvc.fundCampaign(db, A, c1.id);
+  await drainJobs();
   const app1 = await apply("meera", c1.id, "Humid-weather skincare is my most-saved series. I'll do a real 6am routine Reel plus three Stories walking through texture, layering and the intro code.", 7000);
   const ag1 = await collab.makeOffer(db, A, app1.id, { formula: c1.compensation, note: "Standard hybrid terms" });
   await collab.acceptAgreement(db, M, ag1.id);
@@ -358,6 +366,7 @@ export async function seed(db: DB): Promise<void> {
     true,
   );
   await campaignsSvc.fundCampaign(db, N, u1.id);
+  await drainJobs();
   const appK = await apply("kabir", u1.id, "My audience trains 4–5x a week and buys gear on my recommendation — last shoe collab did 210 coupon orders. Happy to go performance-only.", 15000);
   const agK = await collab.makeOffer(db, N, appK.id, { formula: u1.compensation });
   const K = await creatorActor("kabir");
@@ -370,6 +379,7 @@ export async function seed(db: DB): Promise<void> {
   await finance.ingestEvents(db, stride!.id, events(u1.id, creatorIds.kabir!, "sale", 60, now - 19 * DAY, 9 * DAY, "us-steps-a"), "brand_webhook");
   await finance.approveSettlement(db, N, agK.id);
   await finance.payoutCreator(db, N, agK.id);
+  await drainJobs();
   await finance.ingestEvents(db, stride!.id, events(u1.id, creatorIds.kabir!, "sale", 20, now - 9 * DAY, 6 * DAY, "us-steps-b"), "brand_webhook");
   await finance.approveSettlement(db, N, agK.id);
   await finance.openDispute(db, N, agK.id, {

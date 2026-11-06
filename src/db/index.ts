@@ -44,7 +44,7 @@ export async function createPostgres(url: string, max = 10): Promise<DB> {
 
 async function init(): Promise<DB> {
   const url = process.env.DATABASE_URL;
-  const db = url ? await createPostgres(url) : await createPglite(path.join(process.cwd(), ".data", "pglite"));
+  const db = url ? await createPostgres(url) : await createPglite(process.env.PGLITE_DIR ?? path.join(process.cwd(), ".data", "pglite"));
   // Seed only ever runs in the demo. seed() itself is a no-op once any user exists.
   if (isDemo()) await seed(db);
   return db;

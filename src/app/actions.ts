@@ -5,6 +5,7 @@
  * redirect back with a notice or a human-readable error. Never trust anything from the client.
  */
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 import { eq, sql } from "drizzle-orm";
 import { getDb, schema, type DB } from "@/db";
 import { seed } from "@/db/seed";
@@ -18,6 +19,8 @@ import * as creators from "@/server/creators";
 import * as finance from "@/server/finance";
 import { csvList, date, formulaFrom, int, list, money, safeBack, str } from "@/server/forms";
 import { assertDemo, isDemo } from "@/server/env";
+import { runJobs } from "@/server/job-handlers";
+import { rotateWebhookSecret } from "@/server/webhooks";
 import { clearSession, homeFor, requireActor, setSession } from "@/server/session";
 
 function withParam(path: string, key: string, value: string) {
@@ -44,6 +47,9 @@ async function act(fd: FormData, fallback: string, fn: (db: DB, actor: Actor) =>
       target = withParam(back, "error", "Something went wrong. Nothing was changed — please try again.");
     }
   }
+  // The demo has no cron: drain the jobs this action queued right after the response is sent.
+  // Elsewhere the scheduled worker (/api/jobs/run) picks them up.
+  if (isDemo()) after(() => runJobs(db, { deadlineMs: 20_000 }).then(() => undefined));
   // Every page is dynamic and the client router doesn't cache dynamic pages (Next 15 default),
   // so the redirect alone renders fresh data. Avoid revalidatePath here: combined with redirect it
   // races the client router and can drop the navigation.
@@ -136,7 +142,7 @@ export async function campaignTransitionAction(fd: FormData) {
 export async function fundCampaignAction(fd: FormData) {
   await act(fd, "/brand/campaigns", async (db, actor) => {
     await campaigns.fundCampaign(db, actor, str(fd, "campaignId"));
-    return "Campaign funded (test mode — no real money moved)";
+    return "Funding requested. The budget shows as funded once the provider confirms (test mode).";
   });
 }
 export async function refundAction(fd: FormData) {
@@ -258,7 +264,7 @@ export async function approveSettlementAction(fd: FormData) {
 export async function payoutAction(fd: FormData) {
   await act(fd, "/", async (db, actor) => {
     await finance.payoutCreator(db, actor, str(fd, "agreementId"));
-    return { notice: "Payout sent via the mock provider (test mode)", to: withParam(safeBack(fd, "/"), "receipt", "1") };
+    return { notice: "Payout requested. It shows as paid once the provider confirms (test mode).", to: withParam(safeBack(fd, "/"), "receipt", "1") };
   });
 }
 export async function completeAction(fd: FormData) {
@@ -371,4 +377,19 @@ export async function markReadAction(fd: FormData) {
     await admin.markNotificationsRead(db, actor);
     return "All caught up";
   });
+}
+
+// ---------- webhook secret ----------
+/**
+ * Rotates the brand's webhook signing secret and returns it once to the client component that
+ * called it (useActionState). It is never stored in plain text or shown again.
+ */
+export async function rotateWebhookSecretAction(): Promise<{ secret?: string; error?: string }> {
+  const actor = await requireActor("brand");
+  try {
+    return { secret: await rotateWebhookSecret(await getDb(), actor) };
+  } catch (err) {
+    console.error(err);
+    return { error: "Couldn't rotate the secret. Nothing was changed." };
+  }
 }
