@@ -5,7 +5,7 @@ Build plan and flow audit: `./docs/backend-plan.md`.
 
 ### Stack (moment: validate → early grow)
 - App: Next.js 15 monolith (App Router, server actions), TypeScript strict
-- Data: PostgreSQL (Neon, Mumbai) via Drizzle; PGlite only for local demo
+- Data: PostgreSQL (Neon, Singapore; branches main = production, staging, dev) via Drizzle; PGlite only for the zero-setup demo
 - Jobs: Postgres job table drained by Vercel Cron
 - Auth: Clerk (organisations, MFA) — planned, decision D2
 - Email: Resend via outbox — planned

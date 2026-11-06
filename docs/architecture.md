@@ -31,7 +31,7 @@ proovd is a single Next.js 15 + PostgreSQL monolith with a clean domain layer (c
 ## Architecture Diagram (ASCII)
 
 ```
-                 ┌──────────────────────────── Vercel (Mumbai) ─────────────────────────────┐
+                 ┌──────────────────────────── Vercel (Singapore) ──────────────────────────┐
  Brands ───────▶ │  Next.js app: pages, server actions, API routes                           │
  Creators ─────▶ │    src/app  →  src/server (services, Actor auth)  →  src/domain (pure)     │
  Ops ──────────▶ │                                                                           │
@@ -42,7 +42,7 @@ proovd is a single Next.js 15 + PostgreSQL monolith with a clean domain layer (c
                  └───────────────┬──────────────────────────────┬────────────────────────────┘
                                  │ SQL (TLS)                     │ HTTPS (from jobs only)
                  ┌───────────────▼───────────────┐   ┌───────────▼────────────────────────────┐
-                 │ Neon Postgres (Mumbai)        │   │ Clerk (auth, orgs, MFA)                 │
+                 │ Neon Postgres (Singapore)     │   │ Clerk (auth, orgs, MFA)                 │
                  │ ledger · audit (append-only)  │   │ Resend (email)                          │
                  │ jobs · outbox · webhooks_raw  │   │ Payment partner (Phase 4, D4)           │
                  │ encrypted secrets & tokens    │   │ Instagram / YouTube APIs (Phase 3)      │
@@ -54,11 +54,11 @@ proovd is a single Next.js 15 + PostgreSQL monolith with a clean domain layer (c
 
 ```mermaid
 flowchart LR
-  U[Brands / Creators / Ops] --> APP[Next.js monolith on Vercel - Mumbai]
+  U[Brands / Creators / Ops] --> APP[Next.js monolith on Vercel - Singapore]
   BB[Brand backend / Shopify] -->|signed webhook| APP
   SH[Shoppers] -->|/r/slug| APP
   CRON[Vercel Cron 1/min] -->|/api/jobs/run| APP
-  APP --> DB[(Neon Postgres - Mumbai)]
+  APP --> DB[(Neon Postgres - Singapore)]
   APP --> AUTH[Clerk]
   APP -->|outbox jobs| MAIL[Resend]
   APP -->|outbox jobs, Phase 4| PAY[Payment partner]
@@ -74,9 +74,9 @@ flowchart LR
 - **Why now:** team of 1; one deployable unit; services already isolated from the UI.
 - **When to replace:** split a separate API/worker service only when a second client (mobile app or public API) ships, or jobs exceed 5 min.
 
-### PostgreSQL (Neon, Mumbai region) + Drizzle (existing ORM)
+### PostgreSQL (Neon, Singapore region) + Drizzle (existing ORM)
 - **Role:** all data — ledger, audit, jobs, outbox, raw webhooks, search (pg_trgm).
-- **Why now:** money needs transactions and constraints; one database is enough for ≤ 1k creators. Mumbai keeps latency low for Indian users.
+- **Why now:** money needs transactions and constraints; one database is enough for ≤ 1k creators. Singapore is the nearest region Neon offers to India (Mumbai is not available); app functions run in the same region so queries stay ~1–2 ms.
 - **When to replace:** add a read replica when report queries exceed 1 s p95; never add a second database type without a benchmark.
 
 ### Postgres job table + Vercel Cron
@@ -141,11 +141,11 @@ flowchart LR
 - **Tradeoff:** vendor dependency and per-MAU pricing above the free tier.
 - **Revisit when:** MAU > 10k or enterprise SSO is required.
 
-### ADR-005: Data in India, PII separable from money records
-- **Choice:** Vercel and Neon pinned to Mumbai; ledger and audit reference ids only; PII lives in `users`/`creator_profiles` and can be pseudonymised for DPDP erasure without breaking append-only tables.
+### ADR-005: Data near India, PII separable from money records
+- **Choice:** Neon (aws-ap-southeast-1) and Vercel functions (`sin1`) pinned to Singapore, the nearest region Neon offers (2026-11-06: Mumbai is not available); ledger and audit reference ids only; PII lives in `users`/`creator_profiles` and can be pseudonymised for DPDP erasure without breaking append-only tables.
 - **Why:** DPDP obligations apply in full from ~May 2027; append-only money records can't be deleted.
 - **Tradeoff:** erasure is pseudonymisation, documented in the privacy notice.
-- **Revisit when:** legal advice changes.
+- **Revisit when:** legal advice requires data stored in India (DPDP allows cross-border transfer except to countries the government restricts; confirm with counsel), or Neon adds Mumbai.
 
 ### ADR-006: Separate demo, staging and production environments
 - **Choice:** `APP_ENV` controls seed, demo login, reset and simulators; only `demo` has them.
@@ -189,6 +189,7 @@ flowchart LR
 | Date | Reason | Changes |
 |------|--------|---------|
 | 2026-11-05 | Initial generation (brownfield review before moving from demo to beta) | — |
+| 2026-11-06 | Neon project created | Region is Singapore (Mumbai unavailable on Neon); Vercel functions moved to `sin1`. Neon branches: main = production, staging, dev. |
 | 2026-11-06 | Phase 0 slice 1 (hardening) | ADR-006 implemented; ADR-007 added (jobs table contract). Postgres rate limiter, encrypted webhook secrets with 24 h rotation overlap, CI. |
 
 ---

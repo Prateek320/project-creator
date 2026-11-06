@@ -86,7 +86,7 @@ Legend for **Status**: 🟢 logic real and tested in-app · 🟡 real code, neve
 |---|---|---|---|
 | **D1** | How money moves in the beta | **(a) Record-only:** brand pays the creator directly (UPI/bank); proovd records the UTR and both sides confirm. **(b) Escrow/split** through a payment partner from day one. | **(a) first**, (b) in Phase 4 after legal sign-off. Lets real users run real deals in weeks instead of months, without proovd holding funds. The ledger already models both. |
 | **D2** | Auth provider | Clerk · Auth.js + email OTP (Resend) · Supabase Auth | **Clerk** — orgs map to brand teams, MFA built in, no auth code to own. Revisit at 10k MAU (pricing). |
-| **D3** | Hosting | Vercel + Neon Postgres (both in Mumbai region) · Railway (app + worker + Postgres) | **Vercel + Neon**, pinned to Mumbai, with a Postgres job table drained by Vercel Cron. Revisit if any job needs > 5 min or per-second scheduling. |
+| **D3** | Hosting | Vercel + Neon Postgres (both in Singapore; Neon has no Mumbai region) · Railway (app + worker + Postgres) | **Vercel + Neon**, pinned to Singapore, with a Postgres job table drained by Vercel Cron. Revisit if any job needs > 5 min or per-second scheduling. |
 | **D4** | Payment partner for Phase 4 | Razorpay (Route + Payouts) · Cashfree (Split + Payouts) | Talk to **both** now; choose on (1) individual-creator onboarding, (2) hold/release support, (3) approval time, (4) fees. |
 | **D5** | First outcome source for brands | Generic signed webhook (exists) · CSV (exists) · Shopify app · coupon reconciliation | Webhook + CSV for the first 5 brands; **Shopify** next if most beta brands are on it. |
 | **D6** | Tax roles | proovd deducts TDS / collects TCS · brands handle it | Needs a CA. Blocks D1(b) only. |
@@ -108,7 +108,7 @@ passed end to end in staging (sandbox providers) and then once in production wit
 Goal: real people can sign in and run a deal on a real database, safely.
 
 1. **Environments**: `demo` (mock, seeded, nightly reset), `staging` (sandbox providers), `production`. `APP_ENV` gates seed, demo login, reset and simulator.
-2. **Database**: Neon Postgres (Mumbai). Migrations run in CI/deploy, never at boot. Daily backups + point-in-time recovery verified by a restore drill.
+2. **Database**: Neon Postgres (Singapore; branches main = production, staging, dev). Migrations run in CI/deploy, never at boot. Daily backups + point-in-time recovery verified by a restore drill.
 3. **Auth (D2)**: signup/sign-in, brand organisations with owner/member roles and email invites, creator onboarding, ops allow-list. MFA required for brand owners and ops. `getActor()` becomes the only integration point (services already authorise by `Actor`).
 4. **Jobs**: `jobs` table + worker route drained every minute by Vercel Cron (`FOR UPDATE SKIP LOCKED`, retries with backoff, dead-letter). Outbox pattern for anything that calls another system.
 5. **Email**: Resend for invites, offers, review requests, settlements (via the outbox).
