@@ -85,3 +85,11 @@ export function authMode(): "cookie" | "clerk" | "off" {
 /** Verified email addresses that become platform operations (admin) users at onboarding. */
 export const opsEmails = (): Set<string> =>
   new Set((process.env.OPS_EMAILS ?? "").split(",").map((e) => e.trim().toLowerCase()).filter(Boolean));
+
+/** Public base URL for links in emails, e.g. https://staging.proovd.in. */
+export function appUrl(): string {
+  const v = process.env.APP_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
+  if (v) return v.replace(/\/$/, "");
+  if (isLocal()) return "http://localhost:3000";
+  throw new Error(`APP_URL must be set when APP_ENV=${appEnv()}`);
+}

@@ -30,13 +30,16 @@ export async function onboardAction(fd: FormData) {
   const primary = cu.emailAddresses.find((e) => e.id === cu.primaryEmailAddressId);
   const choice = str(fd, "choice") === "brand" ? "brand" : "creator";
   const db = await getDb();
+  let role: string = choice;
   try {
-    await db.transaction((tx) =>
+    role = await db.transaction((tx) =>
       onboard(tx, {
         subject: claims.subject,
         email: primary?.emailAddress ?? "",
         emailVerified: primary?.verification?.status === "verified",
         name: [cu.firstName, cu.lastName].filter(Boolean).join(" ") || cu.username || "",
+        acceptedNotice: fd.get("accept_notice") === "on",
+        productEmails: fd.get("product_emails") === "on",
         choice,
         orgId: claims.orgId,
         opsEmails: opsEmails(),
@@ -45,6 +48,8 @@ export async function onboardAction(fd: FormData) {
   } catch (err) {
     fail("/onboarding", err);
   }
+  // New creators finish their profile first: it stays private until then.
+  if (role === "creator") redirect(`/creator/profile?notice=${encodeURIComponent("Welcome! Complete your profile so brands can find you.")}`);
   await goNext();
 }
 

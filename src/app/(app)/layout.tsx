@@ -34,6 +34,7 @@ const NAV: Record<string, NavItem[]> = {
     { href: "/admin", label: "Overview", icon: "dashboard", exact: true },
     { href: "/admin/queue", label: "Trust & safety queue", icon: "shield" },
     { href: "/admin/audit", label: "Audit trail", icon: "list" },
+    { href: "/admin/privacy", label: "Privacy requests", icon: "shield" },
     { href: "/settings", label: "Settings", icon: "settings" },
   ],
 };

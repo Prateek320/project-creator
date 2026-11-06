@@ -134,7 +134,7 @@ export default async function Landing() {
       </main>
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-line-2 px-4 py-8 text-xs text-muted sm:px-6">
         <span className="inline-flex items-center gap-2"><Logo size={20} className="scale-90" />{demo ? " Demo build. No real money moves." : ""}</span>
-        <span>Payments via an approved provider only after legal review.</span>
+        <span className="inline-flex items-center gap-4"><Link href="/privacy" className="hover:text-ink">Privacy</Link><span>Payments via an approved provider only after legal review.</span></span>
       </footer>
     </div>
   );

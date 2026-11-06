@@ -20,6 +20,7 @@ import * as finance from "@/server/finance";
 import { csvList, date, formulaFrom, int, list, money, safeBack, str } from "@/server/forms";
 import { assertDemo, isDemo } from "@/server/env";
 import { runJobs } from "@/server/job-handlers";
+import * as privacy from "@/server/privacy";
 import { rotateWebhookSecret } from "@/server/webhooks";
 import { clearSession, homeFor, requireActor, setSession } from "@/server/session";
 
@@ -81,6 +82,27 @@ export async function resetDemo(fd: FormData) {
     await seed(db);
     await clearSession();
     return { notice: "Demo data reset — sign in again", to: "/login" };
+  });
+}
+
+// ---------- privacy ----------
+export async function setProductEmailsAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    const granted = str(fd, "granted") === "on";
+    await privacy.setProductEmails(db, actor, granted);
+    return granted ? "Product emails turned on" : "Product emails turned off";
+  });
+}
+export async function requestExportAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    await db.transaction((tx) => privacy.requestExport(tx, actor));
+    return "Export requested. We'll notify you when it's ready to download.";
+  });
+}
+export async function requestErasureAction(fd: FormData) {
+  await act(fd, "/settings", async (db, actor) => {
+    await db.transaction((tx) => privacy.requestErasure(tx, actor, str(fd, "confirm_email", 320)));
+    return "Deletion requested. We'll check nothing is still owed, then delete your account and sign you out.";
   });
 }
 

@@ -3,6 +3,7 @@ import { getDb, schema } from "@/db";
 import { resetDemo } from "@/app/actions";
 import { authMode, isDemo } from "@/server/env";
 import { OrganizationProfile } from "@clerk/nextjs";
+import { PrivacySection } from "@/components/privacy-section";
 import { CopyButton, RotateSecret, SubmitButton } from "@/components/client";
 import { ThemeToggle } from "@/components/theme";
 import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip, fmtDateTime } from "@/components/ui";
@@ -77,6 +78,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
             <OrganizationProfile routing="hash" />
           </div>
         )}
+        <div className="lg:col-span-2"><PrivacySection actor={actor} back="/brand/settings" /></div>
         <Card className="lg:col-span-2" id="webhook">
           <CardHeader title="Conversion webhook" description="Send signups, leads or orders from your backend. Signed with HMAC-SHA256; replays of the same event_id are counted once." />
           <CardBody className="space-y-4 text-sm">

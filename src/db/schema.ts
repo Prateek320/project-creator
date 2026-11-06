@@ -6,6 +6,7 @@
  */
 import {
   bigint,
+  boolean,
   index,
   integer,
   jsonb,
@@ -445,6 +446,46 @@ export const notifications = pgTable(
   (t) => [index("notification_user_idx").on(t.userId, t.createdAt)],
 );
 
+
+// ---------- privacy (DPDP) ----------
+/**
+ * Consent log. Append-only: a withdrawal is a new row with granted = false. The latest row per
+ * (user, purpose) is the current state. `noticeVersion` is the privacy notice the person saw.
+ */
+export const consents = pgTable(
+  "consents",
+  {
+    id: id(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    purpose: text("purpose").notNull(),
+    granted: boolean("granted").notNull(),
+    noticeVersion: text("notice_version").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("consents_user_idx").on(t.userId, t.purpose, t.createdAt)],
+);
+
+export const dataRequestKind = pgEnum("data_request_kind", ["export", "erasure"]);
+export const dataRequestStatus = pgEnum("data_request_status", ["queued", "completed", "blocked", "cancelled"]);
+
+/** Data principal requests. Must be answered within 90 days (`dueAt`); a job does the work. */
+export const dataRequests = pgTable(
+  "data_requests",
+  {
+    id: id(),
+    userId: uuid("user_id").notNull().references(() => users.id),
+    kind: dataRequestKind("kind").notNull(),
+    status: dataRequestStatus("status").notNull().default("queued"),
+    /** Why a request is blocked (e.g. money still owed), shown to the person and to ops. */
+    reason: text("reason"),
+    /** Export only: the JSON bundle, kept for 7 days after completion and then cleared. */
+    result: jsonb("result").$type<Record<string, unknown>>(),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("data_requests_user_idx").on(t.userId, t.createdAt), index("data_requests_status_idx").on(t.status, t.dueAt)],
+);
 
 // ---------- infrastructure ----------
 export const jobStatus = pgEnum("job_status", ["queued", "running", "done", "dead"]);

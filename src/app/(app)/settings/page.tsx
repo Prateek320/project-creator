@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui";
+import { Card, CardBody, CardHeader, Flash, PageHeader } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme";
 import { requireActor } from "@/server/session";
+import { PrivacySection } from "@/components/privacy-section";
 
 export const metadata = { title: "Settings" };
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const actor = await requireActor();
+  const sp = await searchParams;
   return (
     <>
-      <PageHeader title="Settings" description="Personal preferences for this browser." />
+      <Flash sp={sp} />
+      <PageHeader title="Settings" description="Your preferences, email and privacy." />
       <div className="max-w-2xl space-y-6">
         <Card>
           <CardHeader title="Appearance" description="Light keeps the proovd colours. Dark is a quiet monochrome theme. System follows your device." />
@@ -26,6 +29,7 @@ export default async function SettingsPage() {
             </CardBody>
           </Card>
         )}
+        <PrivacySection actor={actor} back="/settings" />
       </div>
     </>
   );

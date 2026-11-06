@@ -18,7 +18,7 @@ import type { DB } from "@/db";
 import { jobs } from "@/db/schema";
 import { audit, type Executor } from "./core";
 
-export type JobKind = "payout.transfer" | "funding.collect" | "maintenance.prune";
+export type JobKind = "payout.transfer" | "funding.collect" | "maintenance.prune" | "email.send" | "privacy.export" | "privacy.erasure";
 export type JobHandler = (db: DB, payload: Record<string, unknown>) => Promise<void>;
 
 export async function enqueue(

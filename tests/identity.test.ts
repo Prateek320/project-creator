@@ -15,6 +15,8 @@ const input = (subject: string, over: Partial<OnboardInput> = {}): OnboardInput 
   email: `${subject}@example.com`,
   emailVerified: true,
   name: subject,
+  acceptedNotice: true,
+  productEmails: false,
   choice: "creator",
   orgId: null,
   opsEmails: new Set(),

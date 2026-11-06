@@ -15,6 +15,7 @@ import { and, eq } from "drizzle-orm";
 import { creatorProfiles, memberships, organizations, users } from "@/db/schema";
 import { DomainError } from "@/domain/types";
 import { ForbiddenError, audit, loadActor, type Actor, type Executor } from "./core";
+import { NOTICE_VERSION, recordConsent } from "./privacy";
 
 export const OWNER_ROLE = "org:admin";
 
@@ -88,6 +89,10 @@ export interface OnboardInput {
   email: string;
   emailVerified: boolean;
   name: string;
+  /** The person ticked the privacy notice box. Required. */
+  acceptedNotice: boolean;
+  /** Optional: product news and tips by email. */
+  productEmails: boolean;
   /** What the person picked. Ignored for allow-listed ops and for invitees joining a set-up brand org. */
   choice: "brand" | "creator";
   orgId: string | null;
@@ -99,6 +104,7 @@ export async function onboard(db: Executor, input: OnboardInput): Promise<Actor[
   const [existing] = await db.select({ role: users.role }).from(users).where(eq(users.authSubject, input.subject)).limit(1);
   if (existing) return existing.role;
 
+  if (!input.acceptedNotice) throw new DomainError("Please accept the privacy notice to continue");
   const email = input.email.trim().toLowerCase();
   const name = input.name.trim() || email.split("@")[0]!;
   if (!email) throw new DomainError("Your account has no email address");
@@ -117,8 +123,11 @@ export async function onboard(db: Executor, input: OnboardInput): Promise<Actor[
     .returning({ id: users.id });
   // A concurrent submit already created this person.
   if (!u) return (await db.select({ role: users.role }).from(users).where(eq(users.authSubject, input.subject)))[0]!.role;
-  if (role === "creator") await db.insert(creatorProfiles).values({ userId: u!.id, displayName: name });
-  await audit(db, null, "user", u!.id, "signed_up", { role });
+  // Private until the creator completes their profile (niches, rates), so brands never see an empty card.
+  if (role === "creator") await db.insert(creatorProfiles).values({ userId: u!.id, displayName: name, visibility: "private" });
+  await recordConsent(db, u!.id, "account", true);
+  await recordConsent(db, u!.id, "product_emails", input.productEmails);
+  await audit(db, null, "user", u!.id, "signed_up", { role, noticeVersion: NOTICE_VERSION });
   return role;
 }
 
