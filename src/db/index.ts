@@ -1,12 +1,16 @@
 /**
  * Database access. Uses real Postgres when DATABASE_URL is set; otherwise an embedded
  * PGlite (Postgres compiled to WASM) persisted in ./.data so the demo runs with zero setup.
- * Both paths run the same SQL migrations from ./drizzle.
+ *
+ * Boot never changes a real database: against Postgres, migrations run only from the deploy
+ * pipeline (`npm run db:migrate`) and demo data only from `npm run db:seed` or the demo itself.
+ * The embedded PGlite file has no pipeline, so it migrates itself on first use.
  */
 import path from "node:path";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "./schema";
 import { seed } from "./seed";
+import { isDemo } from "@/server/env";
 
 export type DB = PgDatabase<PgQueryResultHKT, typeof schema>;
 export type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
@@ -14,31 +18,35 @@ export { schema };
 
 const MIGRATIONS = path.join(process.cwd(), "drizzle");
 
+export async function migrateDb(db: DB, driver: "pglite" | "pg") {
+  const { migrate } =
+    driver === "pglite" ? await import("drizzle-orm/pglite/migrator") : await import("drizzle-orm/node-postgres/migrator");
+  await (migrate as (d: DB, o: { migrationsFolder: string }) => Promise<void>)(db, { migrationsFolder: MIGRATIONS });
+}
+
 async function createPglite(dataDir?: string): Promise<DB> {
   const { PGlite } = await import("@electric-sql/pglite");
   if (dataDir) (await import("node:fs")).mkdirSync(dataDir, { recursive: true });
   const { drizzle } = await import("drizzle-orm/pglite");
-  const { migrate } = await import("drizzle-orm/pglite/migrator");
   const client = new PGlite(dataDir);
-  const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: MIGRATIONS });
-  return db as unknown as DB;
+  const db = drizzle(client, { schema }) as unknown as DB;
+  await migrateDb(db, "pglite");
+  return db;
 }
 
-async function createPostgres(url: string): Promise<DB> {
+/** Connects only. Migrations are the deploy pipeline's job (scripts/migrate.ts). */
+export async function createPostgres(url: string, max = 10): Promise<DB> {
   const { Pool } = await import("pg");
   const { drizzle } = await import("drizzle-orm/node-postgres");
-  const { migrate } = await import("drizzle-orm/node-postgres/migrator");
-  const pool = new Pool({ connectionString: url, max: 10 });
-  const db = drizzle(pool, { schema });
-  await migrate(db, { migrationsFolder: MIGRATIONS });
-  return db as unknown as DB;
+  const pool = new Pool({ connectionString: url, max });
+  return drizzle(pool, { schema }) as unknown as DB;
 }
 
 async function init(): Promise<DB> {
   const url = process.env.DATABASE_URL;
   const db = url ? await createPostgres(url) : await createPglite(path.join(process.cwd(), ".data", "pglite"));
-  await seed(db);
+  // Seed only ever runs in the demo. seed() itself is a no-op once any user exists.
+  if (isDemo()) await seed(db);
   return db;
 }
 

@@ -12,7 +12,9 @@
     "test": "vitest run",
     "db:smoke": "tsx scripts/pg-smoke.ts",
     "db:generate": "drizzle-kit generate",
-    "ship": "sh scripts/ship.sh"
+    "ship": "sh scripts/ship.sh",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.8",

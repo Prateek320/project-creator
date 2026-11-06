@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { getDb, schema } from "@/db";
 import { resetDemo } from "@/app/actions";
+import { isDemo } from "@/server/env";
 import { CopyButton, SubmitButton } from "@/components/client";
 import { ThemeToggle } from "@/components/theme";
 import { Avatar, Badge, Card, CardBody, CardHeader, DL, Flash, PageHeader, StatusChip } from "@/components/ui";
@@ -73,7 +74,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
             </div>
           </CardBody>
         </Card>
-        <Card className="lg:col-span-2">
+        {isDemo() && <Card className="lg:col-span-2">
           <CardHeader title="Demo data" description="Restore every account, campaign and ledger entry to the seeded starting state." />
           <CardBody>
             <form action={resetDemo}>
@@ -81,7 +82,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
               <SubmitButton variant="danger" size="sm" confirm="Reset all demo data for everyone using this instance?">Reset demo data</SubmitButton>
             </form>
           </CardBody>
-        </Card>
+        </Card>}
       </div>
     </>
   );

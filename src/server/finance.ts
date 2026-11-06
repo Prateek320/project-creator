@@ -32,6 +32,7 @@ import {
   type Actor,
   type Executor,
 } from "./core";
+import { assertDemo } from "./env";
 import { getPaymentProvider } from "./providers";
 
 const { attributionEvents, agreements, campaigns, ledgerEntries, paymentTransfers, disputes, milestones, creatorProfiles, organizations } =
@@ -142,6 +143,7 @@ export async function recordClick(db: Executor, slug: string, visitorFingerprint
 
 /** Demo helper: sends conversions through the same ingest path a brand webhook uses. */
 export async function simulateConversions(db: Executor, actor: Actor, rootAgreementId: string, count: number) {
+  assertDemo();
   requireBrand(actor);
   const collab = await getCollaboration(db, actor, rootAgreementId);
   if (collab.side !== "brand") throw new ForbiddenError();

@@ -5,6 +5,7 @@ import { DealFlow, RoleShowcase } from "@/components/deal-flow";
 import { Badge, ButtonLink } from "@/components/ui";
 import { SettlementReceipt } from "@/components/settlement";
 import { formatINR } from "@/domain/money";
+import { isDemo } from "@/server/env";
 import { getActor, homeFor } from "@/server/session";
 
 const steps = [
@@ -129,7 +130,7 @@ export default async function Landing() {
         </section>
       </main>
       <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 border-t border-line-2 px-4 py-8 text-xs text-muted sm:px-6">
-        <span className="inline-flex items-center gap-2"><Logo size={20} className="scale-90" /> Demo build. No real money moves.</span>
+        <span className="inline-flex items-center gap-2"><Logo size={20} className="scale-90" />{isDemo() ? " Demo build. No real money moves." : ""}</span>
         <span>Payments via an approved provider only after legal review.</span>
       </footer>
     </div>

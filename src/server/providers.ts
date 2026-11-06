@@ -4,6 +4,7 @@
  * Instagram Graph / YouTube Data APIs) plug in behind these interfaces after approval and legal review.
  */
 import { createHash } from "node:crypto";
+import { isDemo } from "./env";
 
 export interface PaymentProvider {
   readonly name: string;
@@ -25,8 +26,8 @@ export const mockPaymentProvider: PaymentProvider = {
     return { providerRef: ref("mock_ord", idempotencyKey), status: "funded" };
   },
   async transfer({ idempotencyKey, destination }) {
-    // Simulate a provider-side failure for a reserved test destination so exception handling can be demoed.
-    const status = destination.endsWith("-fail") ? "failed" : "paid";
+    // Demo only: a reserved test destination simulates a provider-side failure so exception handling can be shown.
+    const status = isDemo() && destination.endsWith("-fail") ? "failed" : "paid";
     return { providerRef: ref("mock_trf", idempotencyKey), status };
   },
 };

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDb } from "@/db";
 import { eventValidityAction, resetDemo, verificationAction } from "@/app/actions";
+import { isDemo } from "@/server/env";
 import { SubmitButton } from "@/components/client";
 import { Avatar, Card, CardHeader, Flash, Money, PageHeader, StatusChip, fmtDateTime, inputClass, relDays } from "@/components/ui";
 import { adminQueue } from "@/server/admin";
@@ -89,13 +90,13 @@ export default async function AdminQueue({ searchParams }: { searchParams: Promi
               {q.failedTransfers.length === 0 && <li className="px-6 py-8 text-sm text-muted">No failed transfers. Paid transfers can be reversed from the dispute view.</li>}
             </ul>
           </Card>
-          <Card>
+          {isDemo() && <Card>
             <CardHeader title="Demo data" />
             <form action={resetDemo} className="px-6 py-5">
               <input type="hidden" name="back" value="/admin/queue" />
               <SubmitButton size="sm" variant="danger" confirm="Reset all demo data?">Reset demo data</SubmitButton>
             </form>
-          </Card>
+          </Card>}
         </div>
       </div>
       <p className="mt-8 text-xs text-muted">Last refreshed {fmtDateTime(new Date())}.</p>

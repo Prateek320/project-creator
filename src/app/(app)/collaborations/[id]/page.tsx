@@ -11,6 +11,7 @@ import { MAX_REVISIONS } from "@/domain/state";
 import type { Formula } from "@/domain/types";
 import { getReview } from "@/server/admin";
 import { getCollaboration } from "@/server/collaborations";
+import { isDemo } from "@/server/env";
 import { requireActor } from "@/server/session";
 
 function diffFormula(a: Formula, b: Formula): string[] {
@@ -82,7 +83,7 @@ export default async function Workspace({ params, searchParams }: { params: Prom
                   <div className="text-xs text-muted">Coupon code</div>
                   <div className="mt-1 flex items-center gap-2"><code className="figures rounded-md border border-dashed border-stamp-line bg-stamp-soft px-2.5 py-1 text-[15px] font-bold tracking-[0.04em] text-stamp">{terms.couponCode}</code><CopyButton value={terms.couponCode} /></div>
                 </div>
-                {c.side === "brand" && isLive && (
+                {c.side === "brand" && isLive && isDemo() && (
                   <form action={simulateAction} className="space-y-2 border-t border-line-2 pt-3">
                     <input type="hidden" name="agreementId" value={c.root.id} />
                     <input type="hidden" name="back" value={back} />

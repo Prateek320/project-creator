@@ -1,4 +1,4 @@
-/** Smoke test against a real Postgres: runs migrations + seed and checks ledger integrity. Usage: DATABASE_URL=... npx tsx scripts/pg-smoke.ts */
+/** Smoke test against a real Postgres: checks ledger integrity after db:migrate and db:seed. Usage: APP_ENV=demo DATABASE_URL=... npm run db:smoke */
 import { sql } from "drizzle-orm";
 import { getDb, schema } from "../src/db";
 

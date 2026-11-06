@@ -4,7 +4,7 @@
  * Server actions. Thin: parse input → call a domain service (which authorises the actor) →
  * redirect back with a notice or a human-readable error. Never trust anything from the client.
  */
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { eq, sql } from "drizzle-orm";
 import { getDb, schema, type DB } from "@/db";
 import { seed } from "@/db/seed";
@@ -17,6 +17,7 @@ import type { Actor } from "@/server/core";
 import * as creators from "@/server/creators";
 import * as finance from "@/server/finance";
 import { csvList, date, formulaFrom, int, list, money, safeBack, str } from "@/server/forms";
+import { assertDemo, isDemo } from "@/server/env";
 import { clearSession, homeFor, requireActor, setSession } from "@/server/session";
 
 function withParam(path: string, key: string, value: string) {
@@ -50,7 +51,9 @@ async function act(fd: FormData, fallback: string, fn: (db: DB, actor: Actor) =>
 }
 
 // ---------- session ----------
+/** Demo sign-in: pick a seeded account. Replaced by managed auth outside the demo (slice 2). */
 export async function loginAs(fd: FormData) {
+  if (!isDemo()) notFound();
   const db = await getDb();
   const email = str(fd, "email");
   const [u] = await db.select().from(schema.users).where(eq(schema.users.email, email));
@@ -63,10 +66,8 @@ export async function logout() {
   redirect("/");
 }
 export async function resetDemo(fd: FormData) {
-  await act(fd, "/", async (db, actor) => {
-    if (process.env.DATABASE_URL && process.env.ALLOW_DEMO_RESET !== "1") throw new DomainError("Demo reset is disabled for this database");
-    if (actor.role !== "admin" && process.env.NODE_ENV === "production" && process.env.ALLOW_DEMO_RESET !== "1")
-      throw new DomainError("Only operations can reset demo data");
+  await act(fd, "/", async (db) => {
+    assertDemo();
     const tables = Object.values(schema)
       .filter((t) => typeof t === "object" && t !== null && Symbol.for("drizzle:Name") in t)
       .map((t) => (t as unknown as Record<symbol, string>)[Symbol.for("drizzle:Name")]);

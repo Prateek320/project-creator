@@ -6,6 +6,8 @@ import { NavLinks, type NavItem } from "@/components/nav";
 import { Avatar, TestModeBadge } from "@/components/ui";
 import { ArrowLeftRight, Bell, ChevronDown, FlaskConical, LogOut, Menu, Settings, UserRound } from "lucide-react";
 import { listNotifications } from "@/server/admin";
+import { isDemo } from "@/server/env";
+import { getPaymentProvider } from "@/server/providers";
 import { requireActor } from "@/server/session";
 import { eq } from "drizzle-orm";
 import { schema } from "@/db";
@@ -41,6 +43,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { unread } = await listNotifications(db, actor);
   const [org] = actor.orgId ? await db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId)) : [];
   const items = NAV[actor.role] ?? [];
+  const demo = isDemo();
+  // The badge follows the money: shown while payouts run through a mock provider, in any environment.
+  const testMode = !getPaymentProvider().isLive;
   const workspace = actor.role === "brand" ? (org?.displayName ?? "Brand") : actor.role === "creator" ? "Creator workspace" : "Platform operations";
 
   const sidebar = (
@@ -63,10 +68,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Logo />
           </Link>
           {sidebar}
-          <div className="mt-auto flex gap-2.5 rounded-lg border border-dashed border-line p-3 text-xs leading-relaxed text-muted">
-            <FlaskConical size={16} className="mt-0.5 shrink-0 text-warn" aria-hidden />
-            <span>Demo build. Payments and social data run in mock mode with seeded test data.</span>
-          </div>
+          {demo && (
+            <div className="mt-auto flex gap-2.5 rounded-lg border border-dashed border-line p-3 text-xs leading-relaxed text-muted">
+              <FlaskConical size={16} className="mt-0.5 shrink-0 text-warn" aria-hidden />
+              <span>Demo build. Payments and social data run in mock mode with seeded test data.</span>
+            </div>
+          )}
         </div>
       </aside>
       <div className="min-w-0">
@@ -79,7 +86,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </details>
           <Link href="/" className="lg:hidden"><Logo size={26} /></Link>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <span className="hidden sm:inline-flex"><TestModeBadge /></span>
+            {testMode && <span className="hidden sm:inline-flex"><TestModeBadge /></span>}
             <Link href="/notifications" className="relative grid h-10 w-10 place-items-center rounded-full border border-line bg-surface text-ink transition-colors hover:bg-sunken" aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
               <Bell size={19} strokeWidth={1.9} aria-hidden />
               {unread > 0 && <span className="tnum absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-stamp px-1 text-[10px] font-bold text-white ring-2 ring-surface">{unread > 9 ? "9+" : unread}</span>}
@@ -95,7 +102,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <div className="my-1 h-px bg-line-2" />
                 {actor.role === "creator" && actor.creatorProfileId && <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href={`/creators/${actor.creatorProfileId}`}><UserRound size={16} className="text-faint" aria-hidden />View public profile</Link>}
                 <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href="/settings"><Settings size={16} className="text-faint" aria-hidden />Settings &amp; appearance</Link>
-                <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href="/login"><ArrowLeftRight size={16} className="text-faint" aria-hidden />Switch demo account</Link>
+                {demo && <Link className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-sunken" href="/login"><ArrowLeftRight size={16} className="text-faint" aria-hidden />Switch demo account</Link>}
                 <form action={logout}><button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-sunken"><LogOut size={16} className="text-faint" aria-hidden />Sign out</button></form>
               </div>
             </details>

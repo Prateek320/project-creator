@@ -4,30 +4,23 @@
  * only `getActor()` needs to change; every service already authorises by Actor.
  */
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getDb } from "@/db";
 import { loadActor, type Actor } from "./core";
+import { sessionSecret } from "./env";
 
 const COOKIE = "pc_session";
 
-function secret(): string {
-  const s = process.env.SESSION_SECRET;
-  // The embedded demo database (no DATABASE_URL) may run without a secret; real deployments may not.
-  if (!s && process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
-    throw new Error("SESSION_SECRET must be set when running against a real database");
-  }
-  return s ?? "dev-only-insecure-secret";
-}
-
-const sign = (v: string) => createHmac("sha256", secret()).update(v).digest("base64url");
+const sign = (v: string) => createHmac("sha256", sessionSecret()).update(v).digest("base64url");
 
 export async function setSession(userId: string) {
   const store = await cookies();
   store.set(COOKIE, `${userId}.${sign(userId)}`, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // Secure everywhere except plain-http localhost, so a deployed demo also gets a Secure cookie.
+    secure: !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test((await headers()).get("host") ?? ""),
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
