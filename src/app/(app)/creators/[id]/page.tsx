@@ -23,7 +23,7 @@ export default async function CreatorProfilePage({ params }: { params: Promise<{
         description={`${p.headline} · ${p.location}`}
         actions={isOwner ? <ButtonLink href="/creator/profile" variant="secondary">Edit profile</ButtonLink> : undefined}
       />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="tiles grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Completed collaborations" value={r.completed} hint="On proovd" />
         <Stat label="On-time delivery" value={pct(r.onTimeRate)} hint="Approved deliverables submitted by due date" />
         <Stat label="Verified outcomes driven" value={r.verifiedOutcomes.toLocaleString("en-IN")} hint="Brand-verified, deduplicated" />

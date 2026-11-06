@@ -34,7 +34,7 @@ export default async function EditProfile({ searchParams }: { searchParams: Prom
                 <legend className="mb-2 text-sm font-medium text-ink-2">Niches (first is primary)</legend>
                 <div className="flex flex-wrap gap-2">
                   {NICHES.map((n) => (
-                    <label key={n} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                    <label key={n} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-surface px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                       <input type="checkbox" name="niches" value={n} defaultChecked={p.niches.includes(n)} /> {n}
                     </label>
                   ))}

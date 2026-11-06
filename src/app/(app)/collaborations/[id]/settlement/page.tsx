@@ -1,7 +1,10 @@
 import { getDb } from "@/db";
 import { approveSettlementAction, completeAction, disputeAction, payoutAction } from "@/app/actions";
 import { SubmitButton } from "@/components/client";
-import { Card, CardBody, CardHeader, Field, Flash, Money, Notice, Stat, StatusChip, fmtDateTime, inputClass } from "@/components/ui";
+import { AutoRefresh, CountUp, NewRows } from "@/components/motion";
+import { PayoutReceipt } from "@/components/receipt";
+import { Card, CardBody, CardHeader, Field, Flash, Money, Notice, StatusChip, fmtDate, fmtDateTime, inputClass } from "@/components/ui";
+import { LedgerGroups, SettlementReceipt, SettlementStatus, receiptNo, type StatusStep } from "@/components/settlement";
 import { describeFormula } from "@/domain/compensation";
 import { ACCOUNTS } from "@/domain/ledger";
 import { formatINR } from "@/domain/money";
@@ -21,79 +24,102 @@ export default async function Settlement({ params, searchParams }: { params: Pro
   const clicks = s.events.filter((e) => e.eventType === "click" && e.validityState === "valid").length;
   const isBrand = c.side === "brand";
   const live = c.active && (c.active.status === "accepted" || c.active.status === "disputed");
+  const processing = s.transfers.find((t) => t.state === "transfer_pending");
+  const key = `settle:${c.root.id}`;
+  // Receipt shown once, right after the brand pays out.
+  const lastPaid = sp.receipt === "1" ? [...s.transfers].reverse().find((t) => t.state === "paid") : undefined;
+  const lastPayoutGroup = lastPaid ? [...s.entries].reverse().find((e) => e.entryType === "payout")?.transactionGroupId : undefined;
+  const receiptLines = lastPayoutGroup
+    ? s.entries.filter((e) => e.transactionGroupId === lastPayoutGroup).map((e) => ({ label: ACCOUNTS[e.account as keyof typeof ACCOUNTS] ?? e.account, amountMinor: e.amountMinor }))
+    : [];
+
+  // Where the money is. One step per ledger stage; the current step is the one waiting on someone.
+  const earned = r.totalMinor;
+  const approved = s.settledToDate;
+  const paid = s.balances.creator_paid;
+  const held = s.balances.dispute_hold;
+  const pending = s.pendingApprovalMinor;
+  const payable = s.balances.creator_payable;
+  const steps: StatusStep[] = [
+    { label: "Earned", amountMinor: earned, state: earned > 0 ? "done" : "todo", note: earned > 0 ? `Under agreement v${c.active?.version ?? c.root.version}` : "Nothing earned yet" },
+    {
+      label: "Approved by brand",
+      amountMinor: approved,
+      state: pending > 0 ? "current" : approved > 0 ? "done" : "todo",
+      note: pending > 0 ? `${formatINR(pending)} waiting for ${isBrand ? "your" : "brand"} approval` : approved > 0 ? "Up to date" : "Nothing to approve yet",
+    },
+    {
+      label: "Paid out",
+      amountMinor: paid,
+      state: payable > 0 ? "current" : paid > 0 && pending <= 0 ? "done" : "todo",
+      note: processing ? `Sending ${formatINR(processing.amountMinor)} now` : payable > 0 ? `${formatINR(payable)} ready to pay` : paid > 0 ? `Last paid ${fmtDate([...s.transfers].reverse().find((t) => t.state === "paid")?.createdAt)}` : "Nothing paid yet",
+    },
+    ...(held > 0 ? [{ label: "Held for dispute", amountMinor: held, state: "warn" as const, note: "Undisputed amount still payable" }] : []),
+  ];
+  const lastPaidAt = [...s.transfers].reverse().find((t) => t.state === "paid")?.createdAt;
+  const stamp = earned > 0 && paid >= earned ? { word: "PAID", date: fmtDate(lastPaidAt, { day: "numeric", month: "short", year: "numeric" }) }
+    : earned > 0 && pending <= 0 && approved >= earned ? { word: "APPROVED", date: "Payout pending" }
+    : null;
+  const counted = outcomeEvents.filter((e) => e.validityState === "valid").length;
+  const notCounted = outcomeEvents.length - counted;
 
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Earned under the agreement" value={formatINR(r.totalMinor)} hint={`Agreement v${c.active?.version ?? c.root.version}`} />
-        <Stat label="Approved by brand" value={formatINR(s.settledToDate)} hint={s.pendingApprovalMinor > 0 ? `${formatINR(s.pendingApprovalMinor)} awaiting approval` : "Up to date"} tone={s.pendingApprovalMinor > 0 ? "warn" : "good"} />
-        <Stat label="Paid out" value={formatINR(s.balances.creator_paid)} hint={`${formatINR(s.balances.creator_payable)} ready for payout`} />
-        <Stat label="Held for dispute" value={formatINR(s.balances.dispute_hold)} hint={s.openDispute ? "Undisputed portion still payable" : "Nothing held"} tone={s.balances.dispute_hold ? "warn" : undefined} />
-      </div>
+      {(live || processing) && <AutoRefresh every={processing ? 3000 : 15000} />}
+      {lastPaid && (
+        <PayoutReceipt amountMinor={lastPaid.amountMinor} creator={c.creator.displayName} campaign={c.campaign.title} providerRef={lastPaid.providerRef ?? "mock"} when={fmtDateTime(lastPaid.createdAt)} lines={receiptLines} />
+      )}
+      <SettlementStatus steps={steps} />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_360px]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-8">
-          <Card>
-            <CardHeader title="How this was calculated" description={describeFormula(f)} />
-            <CardBody>
-              <table className="w-full text-sm">
-                <tbody className="divide-y divide-line-2">
-                  {r.lines.map((l) => (
-                    <tr key={l.label}>
-                      <td className="py-2.5 pr-3"><div className="font-medium">{l.label}</div><div className="text-xs text-muted">{l.detail}</div></td>
-                      <td className={`tnum py-2.5 text-right ${l.amountMinor < 0 ? "text-bad" : ""}`}>{l.amountMinor === 0 && l.label === "Excluded events" ? "—" : `${l.amountMinor < 0 ? "−" : ""}${formatINR(Math.abs(l.amountMinor))}`}</td>
-                    </tr>
-                  ))}
-                  <tr><td className="pt-3 font-semibold">Total earned</td><td className="tnum pt-3 text-right text-lg font-semibold"><Money minor={r.totalMinor} /></td></tr>
-                </tbody>
-              </table>
-              {f.model === "hybrid" && r.deliverablesApproved < r.deliverablesTotal && (
-                <p className="mt-3 text-xs text-muted">The {formatINR(f.baseFeeMinor ?? 0)} base is added once all {r.deliverablesTotal} deliverables are approved.</p>
-              )}
-              <p className="mt-3 text-xs text-muted">Deterministic: the same events and agreement version always give the same result. Window: campaign dates + {f.attributionWindowDays} days.</p>
-            </CardBody>
-          </Card>
+          <SettlementReceipt
+            number={receiptNo(c.root.id, c.active?.version ?? c.root.version)}
+            title="Settlement"
+            parties={`${c.creator.displayName} for ${c.campaign.title}`}
+            formulaText={describeFormula(f)}
+            lines={r.lines}
+            total={<CountUp value={r.totalMinor} format="inr" storageKey={`${key}:total`} />}
+            stamp={stamp}
+            notes={[
+              ...(f.model === "hybrid" && r.deliverablesApproved < r.deliverablesTotal
+                ? [`The ${formatINR(f.baseFeeMinor ?? 0)} base is added once all ${r.deliverablesTotal} deliverables are approved (${r.deliverablesApproved} of ${r.deliverablesTotal} so far).`]
+                : []),
+              `Counts events from the campaign dates plus ${f.attributionWindowDays} days. The same events and agreement version always give the same total.`,
+            ]}
+          />
 
           <Card>
-            <CardHeader title="Evidence" description={`${outcomeEvents.length} outcome events received · ${clicks.toLocaleString("en-IN")} tracked clicks`} />
-            <div className="max-h-[420px] overflow-auto">
+            <CardHeader
+              title={<span className="flex items-center gap-2">Evidence{live && <span className="inline-flex items-center gap-1.5 rounded-full bg-sunken px-2 py-0.5 text-[11px] font-semibold text-ink-2"><span className="h-1.5 w-1.5 rounded-full bg-good" />Updating</span>}</span>}
+              description={<><CountUp value={counted} storageKey={`${key}:events`} /> counted, {notCounted} not counted, from {clicks.toLocaleString("en-IN")} tracked clicks.</>}
+            />
+            <NewRows storageKey={`${key}:evidence`} className="max-h-[420px] overflow-auto">
               <table className="w-full min-w-[560px] text-sm">
-                <thead className="sticky top-0 bg-white/90 backdrop-blur"><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-6 py-2.5 font-medium">Counted?</th></tr></thead>
+                <thead className="sticky top-0 bg-surface"><tr className="border-b border-line text-left text-[12.5px] font-semibold text-muted"><th className="px-6 py-2.5 font-medium">Counted</th><th className="px-3 py-2 font-medium">Type</th><th className="px-3 py-2 font-medium">When</th><th className="px-3 py-2 font-medium">Source</th><th className="px-6 py-2.5 text-right font-medium">Reference</th></tr></thead>
                 <tbody className="divide-y divide-line-2">
                   {outcomeEvents.slice(0, 200).map((e) => (
-                    <tr key={e.id}>
-                      <td className="px-6 py-2.5 font-mono text-xs">{e.eventId}</td>
-                      <td className="px-3 py-2">{e.eventType}</td>
-                      <td className="px-3 py-2 text-xs text-muted">{fmtDateTime(e.occurredAt)}</td>
+                    <tr key={e.id} data-row-id={e.id} className={e.validityState !== "valid" ? "bg-bad-50/40" : undefined}>
+                      <td className="px-6 py-2.5">{e.validityState === "valid" ? <span className="text-[13px] font-medium text-good">✓ Counted</span> : <StatusChip status={e.validityState} />}{e.reasonCode && <span className="ml-2 text-xs text-muted">{e.reasonCode.replace(/_/g, " ")}</span>}</td>
+                      <td className="px-3 py-2 capitalize">{e.eventType}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs text-muted">{fmtDateTime(e.occurredAt)}</td>
                       <td className="px-3 py-2 text-xs text-muted">{e.source.replace(/_/g, " ")}</td>
-                      <td className="px-6 py-2.5"><StatusChip status={e.validityState} />{e.reasonCode && <span className="ml-2 text-xs text-muted">{e.reasonCode.replace(/_/g, " ")}</span>}</td>
+                      <td className="px-6 py-2.5 text-right"><span title={e.eventId} className="figures text-xs text-faint">…{e.eventId.slice(-8)}</span></td>
                     </tr>
                   ))}
                   {outcomeEvents.length === 0 && <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">No outcome events yet.</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </NewRows>
           </Card>
 
           <Card>
-            <CardHeader title="Ledger" description="Append-only. Every transaction balances to zero." />
-            {s.entries.length === 0 ? <p className="px-6 py-8 text-sm text-muted">No entries yet.</p> : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[560px] text-sm">
-                  <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">When</th><th className="px-3 py-2 font-medium">Account</th><th className="px-3 py-2 font-medium">Memo</th><th className="px-6 py-2.5 text-right font-medium">Amount</th></tr></thead>
-                  <tbody className="divide-y divide-line-2">
-                    {[...s.entries].reverse().map((e) => (
-                      <tr key={e.id}>
-                        <td className="whitespace-nowrap px-6 py-2.5 text-xs text-muted">{fmtDateTime(e.createdAt)}</td>
-                        <td className="px-3 py-2">{ACCOUNTS[e.account as keyof typeof ACCOUNTS] ?? e.account}</td>
-                        <td className="max-w-[280px] px-3 py-2 text-xs text-muted">{e.memo}</td>
-                        <td className={`tnum whitespace-nowrap px-6 py-2.5 text-right ${e.amountMinor < 0 ? "text-bad" : "text-good"}`}>{e.amountMinor > 0 ? "+" : "−"}{formatINR(Math.abs(e.amountMinor))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <CardHeader title="Ledger" description="Append-only. Each transaction nets to ₹0 across accounts." />
+            {s.entries.length === 0 ? <p className="px-6 py-8 text-sm text-muted">Nothing has moved yet. Approving the settlement writes the first entries.</p> : (
+              <NewRows storageKey={`${key}:ledger`}>
+                <LedgerGroups entries={s.entries} />
+              </NewRows>
             )}
           </Card>
         </div>
@@ -101,24 +127,25 @@ export default async function Settlement({ params, searchParams }: { params: Pro
         <div className="space-y-8">
           {isBrand && (
             <Card>
-              <CardHeader title="Actions" />
+              <CardHeader title={pending > 0 ? "Waiting for your approval" : processing ? "Payout processing" : payable > 0 ? "Ready to pay" : "Next step"} />
               <CardBody className="space-y-3">
                 {c.campaign.fundingState !== "funded" && <Notice tone="warn">Fund the campaign before approving settlements.</Notice>}
                 {s.pendingApprovalMinor > 0 && (
                   <form action={approveSettlementAction}>
                     <input type="hidden" name="agreementId" value={c.root.id} />
                     <input type="hidden" name="back" value={back} />
-                    <SubmitButton className="w-full" disabled={c.campaign.fundingState !== "funded"} pendingLabel="Approving…">Approve {formatINR(s.pendingApprovalMinor)}</SubmitButton>
+                    <SubmitButton variant="success" className="w-full" disabled={c.campaign.fundingState !== "funded"} pendingLabel="Approving…">Approve {formatINR(s.pendingApprovalMinor)}</SubmitButton>
                     <p className="mt-1.5 text-xs text-muted">Approves the amount earned since the last approval.{s.openDispute ? ` Up to ${formatINR(Math.max(0, s.openDispute.amountHeldMinor - s.balances.dispute_hold))} will be held for the open dispute.` : ""}</p>
                   </form>
                 )}
                 {s.pendingApprovalMinor < 0 && <Notice tone="warn">Earned is now {formatINR(-s.pendingApprovalMinor)} below what was approved (events were excluded). Open a dispute so operations can review an adjustment.</Notice>}
-                {s.balances.creator_payable > 0 && (
+                {processing && <Notice tone="info">Payout of {formatINR(processing.amountMinor)} is processing. This page updates when the provider confirms.</Notice>}
+                {s.balances.creator_payable > 0 && !processing && (
                   <form action={payoutAction}>
                     <input type="hidden" name="agreementId" value={c.root.id} />
                     <input type="hidden" name="back" value={back} />
                     <SubmitButton variant="success" className="w-full" pendingLabel="Paying…">Pay out {formatINR(s.balances.creator_payable)}</SubmitButton>
-                    <p className="mt-1.5 text-xs text-muted">Mock payment provider · idempotent · no real money moves.</p>
+                    <p className="mt-1.5 text-xs text-muted">Test mode: the mock provider records the payout. No real money moves.</p>
                   </form>
                 )}
                 {c.active?.status === "accepted" && s.pendingApprovalMinor === 0 && s.balances.creator_payable === 0 && (
@@ -139,7 +166,7 @@ export default async function Settlement({ params, searchParams }: { params: Pro
               <ul className="divide-y divide-line-2">
                 {s.transfers.map((t) => (
                   <li key={t.id} className="flex items-center justify-between px-6 py-4 text-sm">
-                    <div><Money minor={t.amountMinor} className="font-medium" /><div className="font-mono text-[11px] text-muted">{t.providerRef}</div></div>
+                    <div><Money minor={t.amountMinor} className="font-semibold" /><div title={t.providerRef ?? ""} className="text-[11px] text-muted">{t.providerRef ? `Ref …${t.providerRef.slice(-8)}` : "Waiting for provider"} · {fmtDate(t.createdAt)}</div></div>
                     <StatusChip status={t.state} />
                   </li>
                 ))}
@@ -154,14 +181,14 @@ export default async function Settlement({ params, searchParams }: { params: Pro
                 <div key={d.id} className="rounded-lg border border-line p-3">
                   <div className="flex items-center justify-between"><span className="font-medium capitalize">{d.category.replace(/_/g, " ")}</span><StatusChip status={d.state} /></div>
                   <p className="mt-1 text-muted">{d.description}</p>
-                  <div className="mt-1 text-xs text-muted">Hold requested: {formatINR(d.amountHeldMinor)} · opened {fmtDateTime(d.createdAt)}</div>
+                  <div className="mt-1 text-xs text-muted">Holding {formatINR(d.amountHeldMinor)}. Opened {fmtDateTime(d.createdAt)}.</div>
                   {d.resolution && <p className="mt-2 rounded bg-sunken px-2 py-1 text-xs">Resolution ({d.resolution.outcome}) by {d.resolution.by}: {d.resolution.reason}</p>}
                 </div>
               ))}
               {s.disputes.length === 0 && <p className="text-muted">No disputes.</p>}
               {live && !s.openDispute && c.side !== "admin" && (
                 <details>
-                  <summary className="font-medium text-accent">Open a dispute…</summary>
+                  <summary className="font-medium text-stamp">Open a dispute</summary>
                   <form action={disputeAction} className="mt-3 space-y-3">
                     <input type="hidden" name="agreementId" value={c.root.id} />
                     <input type="hidden" name="back" value={back} />

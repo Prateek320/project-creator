@@ -1,10 +1,12 @@
 import { and, desc, eq, ilike, inArray, lt, or, sql, type SQL } from "drizzle-orm";
+import type { DB } from "@/db";
 import * as schema from "@/db/schema";
 import { maxPayout, validateFormula } from "@/domain/compensation";
 import { fundingLines } from "@/domain/ledger";
 import { assertTransition, campaignMachine } from "@/domain/state";
 import { DomainError, type CampaignAudience, type Formula, type MeasurementPlan } from "@/domain/types";
 import { audit, getOwnedCampaign, postLedger, requireBrand, type Actor, type Executor, NotFoundError, assertUuid } from "./core";
+import { enqueue } from "./jobs";
 import { getPaymentProvider } from "./providers";
 
 const { campaigns, campaignRequirements, organizations, applications } = schema;
@@ -122,15 +124,42 @@ export async function transitionCampaign(
 }
 
 /** Funds the campaign through the (mock) payment provider. Idempotent per campaign. */
+/**
+ * Requests funding for the campaign budget. Marks the campaign `funding_pending` and enqueues
+ * `funding.collect` in one transaction; the job collects from the provider and posts the ledger.
+ */
 export async function fundCampaign(db: Executor, actor: Actor, campaignId: string) {
   requireBrand(actor);
   const c = await getOwnedCampaign(db, actor, campaignId);
-  if (c.fundingState === "funded") return;
+  if (c.fundingState === "funded" || c.fundingState === "funding_pending") return;
+  if (c.fundingState === "refunded") throw new DomainError("This campaign's unspent budget was refunded. Create a new campaign to fund again.");
   if (c.status === "cancelled" || c.status === "draft") throw new DomainError("Publish the campaign before funding it");
+  await db.transaction(async (tx) => {
+    const [claimed] = await tx
+      .update(campaigns)
+      .set({ fundingState: "funding_pending" })
+      .where(and(eq(campaigns.id, c.id), eq(campaigns.fundingState, "not_funded")))
+      .returning({ id: campaigns.id });
+    if (!claimed) return; // a concurrent request already started funding
+    await audit(tx, actor, "campaign", c.id, "funding_requested", { amountMinor: c.budgetMinor });
+    await enqueue(tx, "funding.collect", { campaignId: c.id }, { key: `funding.collect:${c.id}` });
+  });
+}
+
+/** Job handler for `funding.collect`. Idempotent: no-ops unless still pending; provider key is stable per campaign. */
+export async function processFundingCollect(db: DB, campaignId: string) {
+  const [c] = await db.select().from(campaigns).where(eq(campaigns.id, campaignId));
+  if (!c || c.fundingState !== "funding_pending") return;
   const provider = getPaymentProvider();
   const key = `fund:${c.id}`;
   const res = await provider.collect({ idempotencyKey: key, amountMinor: c.budgetMinor, currency: c.currency });
   await db.transaction(async (tx) => {
+    const [funded] = await tx
+      .update(campaigns)
+      .set({ fundingState: "funded" })
+      .where(and(eq(campaigns.id, c.id), eq(campaigns.fundingState, "funding_pending")))
+      .returning({ id: campaigns.id });
+    if (!funded) return;
     await postLedger(tx, {
       idempotencyKey: key,
       campaignId: c.id,
@@ -138,10 +167,9 @@ export async function fundCampaign(db: Executor, actor: Actor, campaignId: strin
       lines: fundingLines(c.budgetMinor),
       referenceType: "provider_order",
       referenceId: res.providerRef,
-      memo: `Campaign funded via ${provider.name} provider (test mode)`,
+      memo: `Campaign funded via ${provider.name} provider${provider.isLive ? "" : " (test mode)"}`,
     });
-    await tx.update(campaigns).set({ fundingState: "funded" }).where(eq(campaigns.id, c.id));
-    await audit(tx, actor, "campaign", c.id, "funded", { providerRef: res.providerRef, amountMinor: c.budgetMinor });
+    await audit(tx, null, "campaign", c.id, "funded", { providerRef: res.providerRef, amountMinor: c.budgetMinor });
   });
 }
 

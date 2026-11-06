@@ -5,6 +5,8 @@ import { Logo } from "@/components/logo";
 import { Avatar, Card, Flash, buttonClass } from "@/components/ui";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isDemo } from "@/server/env";
 
 export const metadata = { title: "Sign in" };
 export const dynamic = "force-dynamic";
@@ -19,6 +21,8 @@ const SCENARIOS: Record<string, string> = {
 };
 
 export default async function Login({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  // Demo sign-in only. Real sign-in arrives with managed auth (slice 2).
+  if (!isDemo()) notFound();
   const sp = await searchParams;
   const db = await getDb();
   const users = await db.select().from(schema.users).orderBy(schema.users.role);

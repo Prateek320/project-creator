@@ -12,10 +12,15 @@
     "test": "vitest run",
     "db:smoke": "tsx scripts/pg-smoke.ts",
     "db:generate": "drizzle-kit generate",
-    "ship": "sh scripts/ship.sh"
+    "ship": "sh scripts/ship.sh",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "jobs:work": "tsx scripts/worker.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.8",
+    "@fontsource-variable/archivo": "^5.2.8",
     "@fontsource-variable/figtree": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "drizzle-orm": "^0.44.5",
@@ -27,6 +32,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.15.5",

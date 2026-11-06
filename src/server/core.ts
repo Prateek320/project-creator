@@ -127,29 +127,36 @@ export async function postLedger(
 ): Promise<{ written: boolean; groupId: string }> {
   assertBalanced(p.lines);
   const keys = p.lines.map((_, i) => `${p.idempotencyKey}#${i}`);
-  const existing = await db
+  const groupId = crypto.randomUUID();
+  // One insert that tolerates a concurrent duplicate: the unique idempotency key decides the winner,
+  // and the loser reads back the winner's group instead of throwing.
+  const inserted = await db
+    .insert(ledgerEntries)
+    .values(
+      p.lines.map((l, i) => ({
+        transactionGroupId: groupId,
+        campaignId: p.campaignId,
+        agreementId: p.agreementId ?? null,
+        creatorProfileId: p.creatorProfileId ?? null,
+        account: l.account,
+        entryType: p.entryType,
+        amountMinor: l.amountMinor,
+        idempotencyKey: keys[i]!,
+        referenceType: p.referenceType,
+        referenceId: p.referenceId,
+        memo: p.memo,
+      })),
+    )
+    .onConflictDoNothing({ target: ledgerEntries.idempotencyKey })
+    .returning({ id: ledgerEntries.id });
+  if (inserted.length === p.lines.length) return { written: true, groupId };
+  if (inserted.length > 0) throw new Error(`Ledger idempotency key ${p.idempotencyKey} partially collided; transaction aborted`);
+  const [existing] = await db
     .select({ group: ledgerEntries.transactionGroupId })
     .from(ledgerEntries)
     .where(inArray(ledgerEntries.idempotencyKey, keys))
     .limit(1);
-  if (existing[0]) return { written: false, groupId: existing[0].group };
-  const groupId = crypto.randomUUID();
-  await db.insert(ledgerEntries).values(
-    p.lines.map((l, i) => ({
-      transactionGroupId: groupId,
-      campaignId: p.campaignId,
-      agreementId: p.agreementId ?? null,
-      creatorProfileId: p.creatorProfileId ?? null,
-      account: l.account,
-      entryType: p.entryType,
-      amountMinor: l.amountMinor,
-      idempotencyKey: keys[i]!,
-      referenceType: p.referenceType,
-      referenceId: p.referenceId,
-      memo: p.memo,
-    })),
-  );
-  return { written: true, groupId };
+  return { written: false, groupId: existing!.group };
 }
 
 export async function ledgerFor(db: Executor, where: { campaignId?: string; agreementId?: string }) {

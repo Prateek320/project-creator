@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDb } from "@/db";
-import { Avatar, Badge, ButtonLink, Card, EmptyState, PageHeader, ProvenanceChip, inputClass, pct } from "@/components/ui";
+import { Avatar, Badge, ButtonLink, Card, EmptyState, PageHeader, SourceMark, inputClass, pct } from "@/components/ui";
 import { formatCompact, formatINR } from "@/domain/money";
 import { AUDIENCE_BANDS, CHANNELS, NICHES, discoverCreators } from "@/server/creators";
 import { requireActor } from "@/server/session";
@@ -45,7 +45,7 @@ export default async function DiscoverCreators({ searchParams }: { searchParams:
                   <div className="min-w-0 flex-1">
                     <Link href={`/creators/${p.id}`} className="font-semibold hover:text-accent">{p.displayName}</Link>
                     <div className="truncate text-sm text-muted">{p.headline}</div>
-                    <div className="mt-1 text-xs text-muted">{p.location} · {p.niches.join(", ")}</div>
+                    <div className="mt-1 text-xs text-muted">{p.location}. {p.niches.join(", ")}</div>
                   </div>
                   {p.verificationState === "verified" && <Badge tone="good">Verified</Badge>}
                 </div>
@@ -53,19 +53,22 @@ export default async function DiscoverCreators({ searchParams }: { searchParams:
                   {followers.map((m) => (
                     <div key={m.id} className="flex items-center justify-between">
                       <span className="text-muted">{accounts.find((a) => a.id === m.socialAccountId)?.platform}</span>
-                      <span className="flex items-center gap-2"><span className="tnum font-medium">{formatCompact(m.valueNumeric)}</span><ProvenanceChip status={m.verificationStatus} observedAt={m.observedAt} /></span>
+                      <span className="flex items-baseline gap-1.5"><span className="figures font-semibold">{formatCompact(m.valueNumeric)}</span><SourceMark status={m.verificationStatus} /></span>
                     </div>
                   ))}
-                  {er && <div className="flex items-center justify-between"><span className="text-muted">Engagement</span><span className="flex items-center gap-2"><span className="tnum font-medium">{(er.valueNumeric / 100).toFixed(1)}%</span><ProvenanceChip status={er.verificationStatus} /></span></div>}
+                  {er && <div className="flex items-center justify-between"><span className="text-muted">Engagement</span><span className="flex items-baseline gap-1.5"><span className="figures font-semibold">{(er.valueNumeric / 100).toFixed(1)}%</span><SourceMark status={er.verificationStatus} /></span></div>}
                 </div>
-                <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-sunken p-3 text-center">
-                  <div><div className="tnum text-sm font-semibold">{r.completed}</div><div className="text-[11px] text-muted">completed</div></div>
-                  <div><div className="tnum text-sm font-semibold">{pct(r.onTimeRate)}</div><div className="text-[11px] text-muted">on time</div></div>
-                  <div><div className="tnum text-sm font-semibold">{r.verifiedOutcomes.toLocaleString("en-IN")}</div><div className="text-[11px] text-muted">verified results</div></div>
-                </div>
+                {/* New creators get a sentence, not a row of zeros: no history isn't a bad history. */}
+                <p className="mt-4 rounded-lg border border-dashed border-line px-3 py-2.5 text-[13px] text-ink-2">
+                  {r.completed === 0 && r.verifiedOutcomes === 0 ? (
+                    <span className="text-muted">New to proovd. No collaborations yet.</span>
+                  ) : (
+                    <span className="figures">{r.completed} completed, {pct(r.onTimeRate)} on time, {r.verifiedOutcomes.toLocaleString("en-IN")} verified outcomes</span>
+                  )}
+                </p>
                 <div className="mt-auto flex items-center justify-between pt-4 text-sm">
-                  <span className="text-muted">{formatINR(p.rateMinMinor)}–{formatINR(p.rateMaxMinor)}</span>
-                  <Link href={`/creators/${p.id}`} className="font-medium text-accent">View profile →</Link>
+                  <span className="figures text-ink-2">{formatINR(p.rateMinMinor)}–{formatINR(p.rateMaxMinor)}</span>
+                  <Link href={`/creators/${p.id}`} className="font-semibold text-stamp hover:underline">View profile</Link>
                 </div>
               </Card>
             );

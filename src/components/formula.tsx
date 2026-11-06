@@ -58,7 +58,7 @@ export function FormulaFields({ initial, prefix = "f_", target = 100, budgetMino
         <legend className="mb-2 text-sm font-medium text-ink-2">Compensation model</legend>
         <div className={cx("grid gap-2", compact ? "sm:grid-cols-3" : "sm:grid-cols-3")}>
           {MODELS.map((m) => (
-            <label key={m.id} className={cx("cursor-pointer rounded-2xl border p-3 text-sm transition-colors", model === m.id ? "border-ink bg-white shadow-sm" : "border-black/[0.07] bg-white/50 hover:bg-white/80")}>
+            <label key={m.id} className={cx("cursor-pointer rounded-2xl border p-3 text-sm transition-colors", model === m.id ? "border-ink bg-white" : "border-black/[0.07] bg-surface hover:bg-sunken")}>
               <input type="radio" name={n("model")} value={m.id} checked={model === m.id} onChange={() => setModel(m.id)} className="sr-only" />
               <div className="font-semibold text-ink">{m.title}</div>
               {!compact && <div className="mt-0.5 text-xs text-muted">{m.body}</div>}
@@ -152,7 +152,7 @@ export function EarningsPreview({ formula, target = 100, budgetMinor, slots = 1,
   const peak = Math.max(1, ...points.map((p) => p.v));
   const worst = points[points.length - 1]!.v * slots;
   return (
-    <div className="rounded-2xl border border-white/70 bg-white/60 p-4">
+    <div className="rounded-2xl border border-line bg-surface p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="text-sm font-medium text-ink-2">{title}</div>
         {ok && <div className="text-xs text-muted">{describeFormula(formula)}</div>}

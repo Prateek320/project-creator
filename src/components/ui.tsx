@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { Plus, type LucideIcon } from "lucide-react";
 import { formatINR } from "@/domain/money";
+import { Toast } from "./toast";
 
 export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
@@ -15,7 +16,7 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
     <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {eyebrow && <div className="mb-2 text-sm font-semibold text-muted">{eyebrow}</div>}
-        <h1 className="text-[30px] font-extrabold leading-[1.1] tracking-[-0.03em] text-ink sm:text-[36px]">{title}</h1>
+        <h1 className="text-[30px] font-bold leading-[1.1] tracking-[-0.025em] text-ink sm:text-[36px]">{title}</h1>
         {description && <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2.5">{actions}</div>}
@@ -23,13 +24,13 @@ export function PageHeader({ title, description, actions, eyebrow }: { title: Re
   );
 }
 
-/** Raised surface: white on a slightly darker canvas, lighter top edge, soft shadow below. */
+/** A sheet on paper: solid surface, ruled border. No blur, no lift. */
 export function Card({ className, children, interactive, ...rest }: ComponentProps<"section"> & { interactive?: boolean }) {
   return (
     <section
       className={cx(
-        "rounded-3xl border border-white/70 bg-white/60 shadow-sm backdrop-blur-md",
-        interactive && "transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/80 hover:shadow-[var(--shadow-card-hover)]",
+        "rounded-[14px] border border-line bg-surface shadow-[var(--shadow-card)]",
+        interactive && "transition-colors duration-150 hover:border-faint/60 hover:shadow-[var(--shadow-card-hover)]",
         className,
       )}
       {...rest}
@@ -62,16 +63,17 @@ export function CardBody({ className, children }: { className?: string; children
  */
 type Variant = "primary" | "secondary" | "ghost" | "danger" | "success";
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)] hover:-translate-y-0.5 hover:bg-[#1c2033] active:translate-y-0",
-  secondary: "bg-white text-ink shadow-[0_1px_2px_rgba(15,18,34,0.08),0_4px_12px_-6px_rgba(15,18,34,0.15)] hover:-translate-y-0.5 active:translate-y-0 active:bg-white/80",
-  ghost: "text-ink-2 hover:bg-white/70 hover:text-ink",
-  danger: "bg-white text-bad ring-1 ring-inset ring-red-200 shadow-[0_1px_2px_rgba(15,18,34,0.06)] hover:bg-bad-50",
-  success: "bg-lime text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_12px_-4px_rgba(150,170,20,0.6)] hover:-translate-y-0.5 active:translate-y-0",
+  primary: "bg-ink text-white hover:bg-ink-2 active:translate-y-px",
+  secondary: "border border-line bg-surface text-ink hover:border-faint/70 hover:bg-sunken active:translate-y-px",
+  ghost: "text-ink-2 hover:bg-sunken hover:text-ink",
+  danger: "border border-bad/30 bg-surface text-bad hover:bg-bad-50",
+  /** The one action a screen exists for (approve, pay, accept). Stamp violet; use once per view. */
+  success: "bg-stamp text-white hover:bg-stamp-600 active:translate-y-px",
 };
 const sizes = { sm: "h-9 px-4 text-[13px]", md: "h-11 px-5 text-sm" };
 export const buttonClass = (variant: Variant = "primary", size: "sm" | "md" = "md") =>
   cx(
-    "inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex select-none items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-50",
     variants[variant],
     sizes[size],
   );
@@ -86,18 +88,18 @@ export function ButtonLink({ variant = "primary", size = "md", className, ...res
 // ---------- status ----------
 type Tone = "neutral" | "accent" | "good" | "warn" | "bad" | "info";
 const tones: Record<Tone, string> = {
-  neutral: "bg-black/5 text-ink-2",
-  accent: "bg-indigo-100 text-indigo-700",
-  good: "bg-emerald-100 text-emerald-800",
-  warn: "bg-amber-100 text-amber-800",
-  bad: "bg-rose-100 text-rose-700",
-  info: "bg-sky-100 text-sky-800",
+  neutral: "bg-sunken text-ink-2 ring-1 ring-inset ring-line-2",
+  accent: "bg-stamp-soft text-stamp",
+  good: "bg-good-50 text-good",
+  warn: "bg-warn-50 text-warn",
+  bad: "bg-bad-50 text-bad",
+  info: "bg-info-50 text-info",
 };
-const dots: Record<Tone, string> = { neutral: "bg-faint", accent: "bg-accent", good: "bg-emerald-500", warn: "bg-amber-500", bad: "bg-red-500", info: "bg-sky-500" };
+const dots: Record<Tone, string> = { neutral: "bg-faint", accent: "bg-stamp", good: "bg-good", warn: "bg-warn", bad: "bg-bad", info: "bg-info" };
 
 export function Badge({ tone = "neutral", children, dot = true, title }: { tone?: Tone; children: ReactNode; dot?: boolean; title?: string }) {
   return (
-    <span title={title} className={cx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold", tones[tone])}>
+    <span title={title} className={cx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold", tones[tone])}>
       {dot && <span aria-hidden className={cx("h-1.5 w-1.5 rounded-full", dots[tone])} />}
       {children}
     </span>
@@ -171,26 +173,39 @@ export function ProvenanceChip({ status, observedAt }: { status: string; observe
 }
 
 // ---------- data display ----------
+/** Every rupee amount renders in the figures face so money reads as money. */
 export function Money({ minor, className }: { minor: number; className?: string }) {
-  return <span className={cx("tnum", className)}>{formatINR(minor)}</span>;
+  return <span className={cx("figures", className)}>{formatINR(minor)}</span>;
 }
 
 /**
- * Stat tile: the number pops (large, bold, ink); the label un-pops (small, muted) but stays
- * scannable through uppercase and tracking.
+ * Inline provenance mark: a small tick or dot after a number instead of a full pill. Hover/focus
+ * shows where the number came from. Use where a pill per row would be noise.
  */
+export function SourceMark({ status }: { status: string }) {
+  const [label, tone, help] = PROVENANCE[status] ?? [status, "neutral" as Tone, ""];
+  const verified = tone === "good" || tone === "info";
+  return (
+    <span title={`${label}: ${help}`} className={cx("inline-flex items-center gap-1 whitespace-nowrap text-[11.5px] font-medium", verified ? "text-good" : tone === "warn" ? "text-warn" : "text-faint")}>
+      <span aria-hidden>{verified ? "✓" : "○"}</span>
+      <span className="sr-only sm:not-sr-only">{verified ? "verified" : tone === "warn" ? "self-reported" : label.toLowerCase()}</span>
+    </span>
+  );
+}
+
+/** Stat tile: the number pops in the figures face; the label stays small, muted, sentence case. */
 export function Stat({ label, value, hint, tone, icon: Icon }: { label: ReactNode; value: ReactNode; hint?: ReactNode; tone?: "good" | "warn" | "bad"; icon?: LucideIcon }) {
   return (
     <Card className="p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
         <div className="text-[13px] font-semibold text-muted">{label}</div>
         {Icon && (
-          <span aria-hidden className="grid h-9 w-9 place-items-center rounded-full bg-indigo-100 text-indigo-700">
+          <span aria-hidden className="grid h-8 w-8 place-items-center rounded-full bg-sunken text-muted">
             <Icon size={17} strokeWidth={2.2} />
           </span>
         )}
       </div>
-      <div className="tnum mt-2 truncate text-[26px] font-extrabold leading-tight tracking-[-0.02em] text-ink sm:text-[30px]">{value}</div>
+      <div className="figures mt-2 truncate text-[28px] font-bold leading-tight text-ink sm:text-[32px]">{value}</div>
       {hint && <div className={cx("mt-2.5 text-xs font-medium", tone === "good" ? "text-good" : tone === "warn" ? "text-warn" : tone === "bad" ? "text-bad" : "text-muted")}>{hint}</div>}
     </Card>
   );
@@ -199,7 +214,7 @@ export function Stat({ label, value, hint, tone, icon: Icon }: { label: ReactNod
 export function Progress({ value, max, label }: { value: number; max: number; label: string }) {
   const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-black/[0.07]" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
       <div className="h-full origin-left animate-grow rounded-full bg-ink" style={{ width: `${pct}%` }} />
     </div>
   );
@@ -208,7 +223,7 @@ export function Progress({ value, max, label }: { value: number; max: number; la
 export function EmptyState({ title, body, action, icon: Icon = Plus }: { title: string; body: ReactNode; action?: ReactNode; icon?: LucideIcon }) {
   return (
     <div className="flex flex-col items-center px-6 py-14 text-center">
-      <div aria-hidden className="mb-4 grid h-12 w-12 place-items-center rounded-full bg-lime text-ink">
+      <div aria-hidden className="mb-4 grid h-12 w-12 place-items-center rounded-full border border-dashed border-line bg-sunken text-muted">
         <Icon size={20} strokeWidth={2} />
       </div>
       <h3 className="text-base font-bold text-ink">{title}</h3>
@@ -221,18 +236,12 @@ export function EmptyState({ title, body, action, icon: Icon = Plus }: { title: 
 /** Initials avatar; top-lit gradient from the person's accent colour. */
 export function Avatar({ name, color, size = 36 }: { name: string; color?: string; size?: number }) {
   const initials = name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-  const c = color ?? "#4f46e5";
+  const c = color ?? "#5e2b8c";
   return (
     <span
       aria-hidden
-      className="inline-grid shrink-0 place-items-center rounded-full font-semibold text-white ring-2 ring-white"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.36,
-        background: `linear-gradient(180deg, color-mix(in srgb, ${c} 78%, white), ${c})`,
-        boxShadow: "0 1px 2px rgba(14,22,48,0.18)",
-      }}
+      className="inline-grid shrink-0 place-items-center rounded-full font-semibold text-white"
+      style={{ width: size, height: size, fontSize: size * 0.36, background: c }}
     >
       {initials}
     </span>
@@ -255,7 +264,7 @@ export function DL({ items }: { items: [ReactNode, ReactNode][] }) {
 export function Tabs({ tabs, active }: { tabs: { href: string; label: string; count?: number }[]; active: string }) {
   return (
     <nav aria-label="Sections" className="-mx-4 mb-8 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <ul className="inline-flex gap-1 rounded-full border border-white/70 bg-white/50 p-1 shadow-sm backdrop-blur-md">
+      <ul className="inline-flex gap-6 border-b border-line">
         {tabs.map((t) => {
           const on = t.href === active;
           return (
@@ -264,12 +273,12 @@ export function Tabs({ tabs, active }: { tabs: { href: string; label: string; co
                 href={t.href}
                 aria-current={on ? "page" : undefined}
                 className={cx(
-                  "inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-all duration-150",
-                  on ? "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)]" : "text-ink-2 hover:bg-white/80 hover:text-ink",
+                  "-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-0.5 pb-3 pt-1 text-sm font-semibold transition-colors duration-150",
+                  on ? "border-ink text-ink" : "border-transparent text-muted hover:text-ink",
                 )}
               >
                 {t.label}
-                {t.count !== undefined && <span className={cx("tnum rounded-full px-1.5 text-xs", on ? "bg-lime text-ink" : "bg-black/5 text-muted")}>{t.count}</span>}
+                {t.count !== undefined && <span className={cx("tnum rounded-full px-1.5 text-xs", on ? "bg-ink text-white" : "bg-sunken text-muted")}>{t.count}</span>}
               </Link>
             </li>
           );
@@ -282,7 +291,7 @@ export function Tabs({ tabs, active }: { tabs: { href: string; label: string; co
 // ---------- forms ----------
 /** Inputs are sunken: slightly darker fill with an inner top shadow; they lift to white on focus. */
 export const inputClass =
-  "block w-full rounded-2xl border border-black/[0.07] bg-white/80 px-4 py-2.5 text-sm text-ink shadow-[var(--shadow-inset)] placeholder:text-faint transition-colors duration-150 hover:border-black/15 focus:border-ink/40 focus:bg-white focus:outline-none focus:ring-4 focus:ring-lime/60";
+  "block w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-ink shadow-[var(--shadow-inset)] placeholder:text-faint transition-colors duration-150 hover:border-faint focus:border-stamp focus:outline-none focus:ring-4 focus:ring-stamp-soft";
 
 export function Field({ label, hint, children, htmlFor }: { label: ReactNode; hint?: ReactNode; children: ReactNode; htmlFor?: string }) {
   return (
@@ -298,13 +307,13 @@ export function Field({ label, hint, children, htmlFor }: { label: ReactNode; hi
 
 export function Notice({ tone = "info", children, title }: { tone?: "info" | "warn" | "good" | "bad"; children: ReactNode; title?: ReactNode }) {
   const c = {
-    info: "border-sky-200/80 bg-info-50 text-sky-900",
-    warn: "border-amber-200/80 bg-warn-50 text-amber-900",
-    good: "border-emerald-200/80 bg-good-50 text-emerald-900",
-    bad: "border-red-200/80 bg-bad-50 text-red-900",
+    info: "border-info/20 bg-info-50 text-ink",
+    warn: "border-warn/25 bg-warn-50 text-ink",
+    good: "border-good/20 bg-good-50 text-ink",
+    bad: "border-bad/25 bg-bad-50 text-ink",
   }[tone];
   return (
-    <div role={tone === "bad" ? "alert" : "status"} className={cx("animate-pop-in rounded-2xl border px-4 py-3.5 text-sm leading-relaxed shadow-[0_1px_2px_rgba(14,22,48,0.04)]", c)}>
+    <div role={tone === "bad" ? "alert" : "status"} className={cx("animate-pop-in rounded-xl border px-4 py-3.5 text-sm leading-relaxed", c)}>
       {title && <div className="mb-0.5 font-semibold">{title}</div>}
       {children}
     </div>
@@ -316,15 +325,14 @@ export function Flash({ sp }: { sp: Record<string, string | string[] | undefined
   const notice = typeof sp.notice === "string" ? sp.notice : null;
   const error = typeof sp.error === "string" ? sp.error : null;
   if (!notice && !error) return null;
-  return <div className="mb-6">{error ? <Notice tone="bad">{error}</Notice> : <Notice tone="good">{notice}</Notice>}</div>;
+  return error ? <Toast key={`e:${error}`} tone="bad" message={error} /> : <Toast key={`n:${notice}`} tone="good" message={notice!} />;
 }
 
 export function TestModeBadge() {
   return (
-    <span title="No real money moves and no live social data is fetched" className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/80 bg-warn-50 px-2.5 py-1 text-xs font-semibold text-warn">
+    <span title="No real money moves and no live social data is fetched" className="inline-flex items-center gap-1.5 rounded-full border border-warn/25 bg-warn-50 px-2.5 py-1 text-xs font-semibold text-warn">
       <span aria-hidden className="relative flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warn" />
       </span>
       Test mode
     </span>

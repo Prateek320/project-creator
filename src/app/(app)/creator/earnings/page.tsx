@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDb } from "@/db";
 import { Card, CardHeader, EmptyState, PageHeader, Stat, fmtDateTime } from "@/components/ui";
 import { formatINR } from "@/domain/money";
+import { CountUp } from "@/components/motion";
 import { creatorEarnings } from "@/server/finance";
 import { requireActor } from "@/server/session";
 
@@ -23,9 +24,9 @@ export default async function Earnings() {
   return (
     <>
       <PageHeader title="Earnings" description="Every rupee links back to the agreement version and the verified evidence it was calculated from." />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Stat label="Paid to you" value={formatINR(b.creator_paid)} hint="Via payment provider (test mode)" />
-        <Stat label="Approved, awaiting payout" value={formatINR(b.creator_payable)} />
+      <div className="tiles grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Stat label="Paid to you" value={<CountUp value={b.creator_paid} format="inr" storageKey={`earn:${actor.creatorProfileId}:paid`} />} hint="Via payment provider (test mode)" />
+        <Stat label="Approved, awaiting payout" value={<CountUp value={b.creator_payable} format="inr" storageKey={`earn:${actor.creatorProfileId}:payable`} />} />
         <Stat label="Held for open disputes" value={formatINR(b.dispute_hold)} hint="Only the disputed portion is held" tone={b.dispute_hold ? "warn" : undefined} />
       </div>
       <Card className="mt-8">

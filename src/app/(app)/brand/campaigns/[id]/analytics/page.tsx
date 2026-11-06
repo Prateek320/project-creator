@@ -29,7 +29,7 @@ export default async function Analytics({ params, searchParams }: { params: Prom
   return (
     <>
       <Flash sp={sp} />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="tiles grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat icon={BadgeCheck} label={`Verified ${r.outcomeType}s`} value={valid.toLocaleString("en-IN")} hint={`Target ${r.campaign.measurement.target} per creator`} />
         <Stat icon={MousePointerClick} label="Tracked clicks" value={formatCompact(clicks)} hint={clicks ? `${pct(valid / clicks, 1)} click → ${r.outcomeType}` : "No clicks yet"} />
         <Stat icon={HandCoins} label="Earned by creators" value={formatINR(earned)} hint={`${formatINR(committed)} approved so far`} />
@@ -71,14 +71,14 @@ export default async function Analytics({ params, searchParams }: { params: Prom
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
-              <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted">
+              <thead><tr className="border-b border-line text-left text-[12.5px] font-semibold text-muted">
                 <th className="px-6 py-4 font-medium">Creator</th><th className="px-3 py-3 text-right font-medium">Clicks</th><th className="px-3 py-3 text-right font-medium">Valid</th><th className="px-3 py-3 text-right font-medium">Excluded</th><th className="px-3 py-3 text-right font-medium">Deliverables</th><th className="px-3 py-3 text-right font-medium">Earned</th><th className="px-6 py-4 text-right font-medium">Paid</th>
               </tr></thead>
               <tbody className="divide-y divide-line-2">
                 {r.perCreator.map((p) => {
                   const ex = p.settlement.excluded;
                   return (
-                    <tr key={p.rootId} className="transition-colors hover:bg-white/60">
+                    <tr key={p.rootId} className="transition-colors hover:bg-sunken">
                       <td className="px-6 py-4"><Link href={`/collaborations/${p.rootId}/settlement`} className="flex items-center gap-2 font-medium hover:text-accent"><Avatar name={p.creator.displayName} color={p.creator.accent} size={26} />{p.creator.displayName}</Link><div className="pl-8 text-xs text-muted">code {p.coupon}</div></td>
                       <td className="tnum px-3 py-3 text-right">{p.clicks.toLocaleString("en-IN")}</td>
                       <td className="tnum px-3 py-3 text-right font-medium">{p.settlement.validOutcomes}</td>
@@ -103,7 +103,7 @@ export default async function Analytics({ params, searchParams }: { params: Prom
           ) : (
             <div className="max-h-[480px] overflow-auto">
               <table className="w-full min-w-[620px] text-sm">
-                <thead className="sticky top-0 bg-white/90 backdrop-blur"><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-3 py-2 font-medium">Status</th><th className="px-6 py-2.5" /></tr></thead>
+                <thead className="sticky top-0 bg-surface"><tr className="border-b border-line text-left text-[12.5px] font-semibold text-muted"><th className="px-6 py-2.5 font-medium">Event ID</th><th className="px-3 py-2 font-medium">Time</th><th className="px-3 py-2 font-medium">Source</th><th className="px-3 py-2 font-medium">Status</th><th className="px-6 py-2.5" /></tr></thead>
                 <tbody className="divide-y divide-line-2">
                   {outcomeEvents.map((e) => (
                     <tr key={e.id}>

@@ -23,7 +23,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
     <>
       <Flash sp={sp} />
       <PageHeader title="Billing & ledger" description="An append-only, double-entry record of every funding, settlement, payout and refund. Corrections are new entries — nothing is overwritten." />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="tiles grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat icon={Landmark} label="Funded" value={formatINR(-b.brand_external)} hint="Collected by payment provider (test)" />
         <Stat icon={Vault} label="Held at provider" value={formatINR(b.campaign_funds)} hint="Not yet approved for creators" />
         <Stat icon={HandCoins} label="Paid to creators" value={formatINR(b.creator_paid)} hint={`${formatINR(b.creator_payable)} approved, awaiting payout`} />
@@ -34,7 +34,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         {groups.size === 0 ? <EmptyState title="No transactions yet" body="Fund a published campaign to see entries here." /> : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
-              <thead><tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.07em] text-muted"><th className="px-6 py-4 font-medium">When</th><th className="px-3 py-3 font-medium">Transaction</th><th className="px-3 py-3 font-medium">Campaign / creator</th><th className="px-3 py-3 font-medium">Entries</th><th className="px-6 py-4 text-right font-medium">Amount</th></tr></thead>
+              <thead><tr className="border-b border-line text-left text-[12.5px] font-semibold text-muted"><th className="px-6 py-4 font-medium">When</th><th className="px-3 py-3 font-medium">Transaction</th><th className="px-3 py-3 font-medium">Campaign / creator</th><th className="px-3 py-3 font-medium">Entries</th><th className="px-6 py-4 text-right font-medium">Amount</th></tr></thead>
               <tbody className="divide-y divide-line-2">
                 {[...groups.values()].map((g) => {
                   const first = g[0]!;

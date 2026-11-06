@@ -40,7 +40,7 @@ export interface NavItem {
   exact?: boolean;
 }
 
-/** Selected state uses colour and a raised surface only — never size or weight — so nothing shifts. */
+/** Selected state: a sheet with a ruled edge and a stamp-violet icon. Never size or weight, so nothing shifts. */
 export function NavLinks({ items }: { items: NavItem[] }) {
   const path = usePathname();
   return (
@@ -54,13 +54,11 @@ export function NavLinks({ items }: { items: NavItem[] }) {
               href={it.href}
               aria-current={active ? "page" : undefined}
               className={cx(
-                "group flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm font-semibold transition-all duration-150",
-                active
-                  ? "bg-ink text-white shadow-[0_6px_16px_-8px_rgba(15,18,34,0.6)]"
-                  : "text-ink-2 hover:bg-white/70 hover:text-ink",
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors duration-150",
+                active ? "bg-surface text-ink ring-1 ring-line" : "text-ink-2 hover:bg-surface/70 hover:text-ink",
               )}
             >
-              <Icon size={18} strokeWidth={1.9} className={cx("transition-colors", active ? "text-lime" : "text-faint group-hover:text-ink-2")} aria-hidden />
+              <Icon size={18} strokeWidth={1.9} className={cx("transition-colors", active ? "text-stamp" : "text-faint group-hover:text-ink-2")} aria-hidden />
               {it.label}
             </Link>
           </li>

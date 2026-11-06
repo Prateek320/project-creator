@@ -8,6 +8,16 @@ import * as collab from "@/server/collaborations";
 import * as finance from "@/server/finance";
 import * as creators from "@/server/creators";
 import * as admin from "@/server/admin";
+import { runJobs } from "@/server/job-handlers";
+import { drain } from "@/server/jobs";
+import { postLedger } from "@/server/core";
+import { decryptSecret, encryptSecret } from "@/server/crypto";
+import { ROTATION_OVERLAP_MS, rotateWebhookSecret, verifyOrgSignature } from "@/server/webhooks";
+import { rateLimit } from "@/server/rate-limit";
+import { appEnv, assertDemo } from "@/server/env";
+import { signPayload } from "@/domain/attribution";
+import { fundingLines } from "@/domain/ledger";
+import { sql } from "drizzle-orm";
 import { DomainError } from "@/domain/types";
 
 let db: DB;
@@ -102,6 +112,11 @@ describe("end-to-end vertical slice", () => {
     );
     await campaigns.fundCampaign(db, actors.glow!, c.id);
     await campaigns.fundCampaign(db, actors.glow!, c.id); // idempotent
+    // Requesting funding only queues it: nothing reaches the ledger until the job runs.
+    expect((await getOwnedCampaign(db, actors.glow!, c.id)).fundingState).toBe("funding_pending");
+    await runJobs(db);
+    await runJobs(db); // nothing left to do
+    expect((await getOwnedCampaign(db, actors.glow!, c.id)).fundingState).toBe("funded");
     const funding = await db.select().from(schema.ledgerEntries).where(and(eq(schema.ledgerEntries.campaignId, c.id), eq(schema.ledgerEntries.entryType, "funding")));
     expect(funding).toHaveLength(2);
 
@@ -131,6 +146,9 @@ describe("end-to-end vertical slice", () => {
     await finance.approveSettlement(db, actors.glow!, offer.id);
     await expect(finance.approveSettlement(db, actors.glow!, offer.id)).rejects.toThrow(/up to date/);
     await finance.payoutCreator(db, actors.glow!, offer.id);
+    await expect(finance.payoutCreator(db, actors.glow!, offer.id)).rejects.toThrow(/already processing/);
+    expect((await finance.getSettlement(db, actors.sana!, offer.id)).balances.creator_paid).toBe(0);
+    await runJobs(db);
     const after = await finance.getSettlement(db, actors.sana!, offer.id);
     expect(after.balances.creator_paid).toBe(370_000);
     expect(after.balances.creator_payable).toBe(0);
@@ -238,5 +256,104 @@ describe("creator data", () => {
     expect(beauty.items.every((i) => i.profile.niches.includes("Beauty"))).toBe(true);
     const camp = await campaigns.discoverCampaigns(db, { niche: "Fitness" });
     expect(camp.items.every((i) => i.campaign.niche === "Fitness" && i.campaign.status === "published")).toBe(true);
+  });
+});
+
+describe("jobs and outbox", () => {
+  const jobRows = async (kind: string) => (await db.select().from(schema.jobs).where(eq(schema.jobs.kind, kind)));
+
+  it("a payout survives a worker crash: reclaimed job settles exactly once and the ledger balances", async () => {
+    const c = await campaignByTitle("Monsoon Glow Serum launch");
+    const root = await rootFor(c.id, actors.meera!.creatorProfileId!);
+    await finance.approveSettlement(db, actors.glow!, root.id);
+    await finance.payoutCreator(db, actors.glow!, root.id);
+    const [pending] = (await finance.getSettlement(db, actors.glow!, root.id)).transfers.filter((t) => t.state === "transfer_pending");
+    expect(pending).toBeDefined();
+    // Simulate a worker that claimed the job and died: running, locked six minutes ago.
+    await db.update(schema.jobs).set({ status: "running", lockedAt: new Date(Date.now() - 6 * 60_000), lockedBy: "dead-worker", attempts: 1 })
+      .where(eq(schema.jobs.idempotencyKey, `payout.transfer:${pending!.id}`));
+    await runJobs(db);
+    await finance.processPayoutTransfer(db, pending!.id); // a duplicate run is a no-op
+    const s = await finance.getSettlement(db, actors.glow!, root.id);
+    expect(s.transfers.filter((t) => t.state === "paid" && t.id === pending!.id)).toHaveLength(1);
+    expect(s.balances.creator_payable).toBe(0);
+    const payoutLinesForTransfer = s.entries.filter((e) => e.entryType === "payout" && e.referenceId === s.transfers.find((t) => t.id === pending!.id)!.providerRef);
+    expect(payoutLinesForTransfer).toHaveLength(2);
+    expect(payoutLinesForTransfer.reduce((t, e) => t + e.amountMinor, 0)).toBe(0);
+  });
+
+  it("failing jobs back off, then go dead with an audit row", async () => {
+    await db.insert(schema.jobs).values({ kind: "maintenance.prune", idempotencyKey: "test:always-fails", maxAttempts: 2 });
+    const failing = { "payout.transfer": async () => {}, "funding.collect": async () => {}, "maintenance.prune": async () => { throw new Error("boom"); } };
+    const first = await drain(db, failing);
+    expect(first.retried).toBeGreaterThanOrEqual(1);
+    const [afterFirst] = await db.select().from(schema.jobs).where(eq(schema.jobs.idempotencyKey, "test:always-fails"));
+    expect(afterFirst).toMatchObject({ status: "queued", attempts: 1, lastError: "boom" });
+    expect(afterFirst!.runAt.getTime()).toBeGreaterThan(Date.now());
+    await db.update(schema.jobs).set({ runAt: new Date(0) }).where(eq(schema.jobs.idempotencyKey, "test:always-fails"));
+    await drain(db, failing);
+    const [dead] = await db.select().from(schema.jobs).where(eq(schema.jobs.idempotencyKey, "test:always-fails"));
+    expect(dead!.status).toBe("dead");
+    const audits = await db.select().from(schema.auditEvents).where(and(eq(schema.auditEvents.entityId, dead!.id), eq(schema.auditEvents.action, "job_dead")));
+    expect(audits).toHaveLength(1);
+    expect(await jobRows("maintenance.prune")).not.toHaveLength(0);
+  });
+
+  it("concurrent postLedger calls with one key write one balanced group", async () => {
+    const c = await campaignByTitle("Monsoon Glow Serum launch");
+    const p = { idempotencyKey: "test:concurrent", campaignId: c.id, entryType: "funding" as const, lines: fundingLines(1_000), referenceType: "test", referenceId: "t", memo: "concurrency test" };
+    const [a, b] = await Promise.all([postLedger(db, p), postLedger(db, p)]);
+    expect([a.written, b.written].sort()).toEqual([false, true]);
+    expect(a.groupId).toBe(b.groupId);
+    const rows = await db.select().from(schema.ledgerEntries).where(eq(schema.ledgerEntries.transactionGroupId, a.groupId));
+    expect(rows).toHaveLength(2);
+  });
+});
+
+describe("security foundations", () => {
+  it("encrypts secrets with authentication", () => {
+    const stored = encryptSecret("hello");
+    expect(stored).toMatch(/^v1:/);
+    expect(stored).not.toContain("hello");
+    expect(decryptSecret(stored)).toBe("hello");
+    const [v, iv, tag, ct] = stored.split(":");
+    const flipped = `${v}:${iv}:${tag}:${ct!.slice(0, -2)}${ct!.endsWith("A") ? "B" : "A"}${ct!.slice(-1)}`;
+    expect(() => decryptSecret(flipped)).toThrow();
+  });
+
+  it("rotating a webhook secret keeps the old one valid for 24 hours only", async () => {
+    const first = await rotateWebhookSecret(db, actors.glow!);
+    const second = await rotateWebhookSecret(db, actors.glow!);
+    const [org] = await db.select().from(schema.organizations).where(eq(schema.organizations.id, actors.glow!.orgId!));
+    expect(org!.webhookSecretEnc).not.toContain(second);
+    const body = JSON.stringify({ event_id: "rotation" });
+    const sig = (secret: string) => `sha256=${signPayload(secret, body)}`;
+    expect(verifyOrgSignature(org!, body, sig(second))).toBe(true);
+    expect(verifyOrgSignature(org!, body, sig(first))).toBe(true);
+    const later = new Date(org!.webhookSecretRotatedAt!.getTime() + ROTATION_OVERLAP_MS + 1);
+    expect(verifyOrgSignature(org!, body, sig(first), later)).toBe(false);
+    expect(verifyOrgSignature(org!, body, sig(second), later)).toBe(true);
+    expect(verifyOrgSignature(org!, body, sig("wrong"))).toBe(false);
+  });
+
+  it("rate limits per key across a fixed window", async () => {
+    expect(await rateLimit(db, "test:rl", 2, 60_000)).toBe(true);
+    expect(await rateLimit(db, "test:rl", 2, 60_000)).toBe(true);
+    expect(await rateLimit(db, "test:rl", 2, 60_000)).toBe(false);
+    await db.execute(sql`update rate_limits set window_start = now() - interval '2 minutes' where key = 'test:rl'`);
+    expect(await rateLimit(db, "test:rl", 2, 60_000)).toBe(true);
+  });
+
+  it("demo-only behaviour is unavailable outside the demo, and APP_ENV is required with a real database", () => {
+    const saved = { APP_ENV: process.env.APP_ENV, DATABASE_URL: process.env.DATABASE_URL };
+    try {
+      process.env.APP_ENV = "staging";
+      expect(() => assertDemo()).toThrow(/Not found/);
+      delete process.env.APP_ENV;
+      process.env.DATABASE_URL = "postgres://example/db";
+      expect(() => appEnv()).toThrow(/APP_ENV must be set/);
+    } finally {
+      for (const [k, v] of Object.entries(saved)) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    }
   });
 });

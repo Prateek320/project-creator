@@ -3,29 +3,33 @@ import { ScrollText, ShieldCheck } from "lucide-react";
 import { getDb } from "@/db";
 import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
-import { DashHeader, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, DashHeader, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
-import { cx, glassRow, limePill } from "@/components/dashboard/styles";
+import { cx, glassRow, stampPill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { adminHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
+import { listNotifications } from "@/server/admin";
 
 export const metadata = { title: "Operations" };
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requireActor("admin");
   const sp = await searchParams;
-  const d = await adminHomeData(await getDb(), actor);
+  const db = await getDb();
+  const [d, notes] = await Promise.all([adminHomeData(db, actor), listNotifications(db, actor)]);
   const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const now = Date.now();
+  const activity = notes.rows.slice(0, 5).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, ago: agoLabel(n.createdAt, now), unread: !n.readAt }));
   const c = d.counts;
 
   const fallback = c.disputes > 0 ? "disputes" : c.verify > 0 ? "verify" : c.events > 0 ? "events" : "payments";
   const views: ViewDef[] = [
-    { id: "disputes", label: "Open disputes", icon: "scale", tint: "bg-rose-100 text-rose-700", value: String(c.disputes), caption: c.disputes ? "Only the disputed amount is held" : "None open" },
-    { id: "events", label: "Excluded events", icon: "filter", tint: "bg-amber-100 text-amber-700", value: String(c.events), caption: "Invalid or out of window" },
-    { id: "verify", label: "Verification", icon: "shield", tint: "bg-emerald-100 text-emerald-700", value: String(c.verify), caption: "Creators and businesses" },
-    { id: "payments", label: "Payouts", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(c.paidMinor), caption: c.failed ? `${c.failed} failed transfer${c.failed > 1 ? "s" : ""}` : "No payment exceptions" },
+    { id: "disputes", label: "Open disputes", icon: "scale", tint: "bg-bad-50 text-bad", value: String(c.disputes), caption: c.disputes ? "Only the disputed amount is held" : "None open" },
+    { id: "events", label: "Excluded events", icon: "filter", tint: "bg-warn-50 text-warn", value: String(c.events), caption: "Invalid or out of window" },
+    { id: "verify", label: "Verification", icon: "shield", tint: "bg-good-50 text-good", value: String(c.verify), caption: "Creators and businesses" },
+    { id: "payments", label: "Payouts", icon: "wallet", tint: "bg-good-50 text-good", value: formatINR(c.paidMinor), caption: c.failed ? `${c.failed} failed transfer${c.failed > 1 ? "s" : ""}` : "No payment exceptions" },
   ];
   const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
   const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
@@ -37,6 +41,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         question="Open disputes oldest first. Each resolution needs a written reason."
         chips={[{ id: "all", label: "All" }, { id: "open", label: "Open" }, { id: "resolved", label: "Resolved" }]}
         rows={of("disputes")}
+        beamFirst
         initialChip={chipFor("disputes")}
         emptyTitle="No disputes"
         emptyBody="When a brand or creator raises one, it lands here."
@@ -88,7 +93,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           greeting={greetingFor()}
           title="Trust & safety"
           actions={
-            <Link href="/admin/queue" className={limePill}>
+            <Link href="/admin/queue" className={stampPill}>
               <ShieldCheck size={16} aria-hidden /> Open review queue
             </Link>
           }
@@ -98,20 +103,21 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
             <FilterDashboard views={views} panels={panels} initialView={initialView} defaultView={fallback} />
           </div>
           <aside className="space-y-6">
+            <ActivityFeed items={activity} />
             <SideCard title="Principles">
               {[
                 ["Hold only what's disputed", "Undisputed earnings keep flowing to the creator."],
                 ["Every override has a reason", "Actor, time and reason go to the append-only audit log."],
                 ["Matching is advisory", "Signals never auto-reject a creator."],
               ].map(([t, s]) => (
-                <div key={t} className="rounded-2xl bg-white/70 px-4 py-3">
+                <div key={t} className="rounded-2xl bg-surface px-4 py-3">
                   <div className="text-sm font-bold text-ink">{t}</div>
                   <div className="mt-0.5 text-[13px] text-muted">{s}</div>
                 </div>
               ))}
             </SideCard>
             <Link href="/admin/audit" className={cx(glassRow, "flex items-center gap-3 p-4")}>
-              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-100 text-indigo-700">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-stamp-soft text-stamp">
                 <ScrollText size={19} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">

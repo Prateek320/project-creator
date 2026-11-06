@@ -1,17 +1,17 @@
 import Link from "next/link";
 import { eq } from "drizzle-orm";
-import { ArrowUpRight, BadgeCheck, Plus } from "lucide-react";
+import { BadgeCheck, Plus } from "lucide-react";
 import { getDb, schema } from "@/db";
-import { formatINR } from "@/domain/money";
 import { Flash } from "@/components/ui";
-import { ContinueBlock, DashHeader, MoneyCta, SideCard } from "@/components/dashboard/blocks";
+import { ActivityFeed, agoLabel, ContinueBlock, DashHeader, MoneySummary, SideCard } from "@/components/dashboard/blocks";
 import { FilterDashboard, type ViewDef } from "@/components/dashboard/filter-dashboard";
 import { FilteredList } from "@/components/dashboard/list";
 import { Fact, QuickSheet } from "@/components/dashboard/sheet";
-import { cx, darkPill, glass, limePill } from "@/components/dashboard/styles";
+import { cx, darkPill, stampPill } from "@/components/dashboard/styles";
 import { greetingFor, pickView } from "@/components/dashboard/types";
 import { brandHomeData } from "@/server/home";
 import { requireActor } from "@/server/session";
+import { listNotifications } from "@/server/admin";
 
 export const metadata = { title: "Overview" };
 
@@ -19,22 +19,25 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
   const actor = await requireActor("brand");
   const sp = await searchParams;
   const db = await getDb();
-  const [d, [org]] = await Promise.all([brandHomeData(db, actor), db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!))]);
+  const [d, [org], notes] = await Promise.all([brandHomeData(db, actor), db.select().from(schema.organizations).where(eq(schema.organizations.id, actor.orgId!)), listNotifications(db, actor)]);
   const of = (v: string) => d.rows.filter((r) => r.view === v);
+  const now = Date.now();
+  const activity = notes.rows.slice(0, 5).map((n) => ({ id: n.id, title: n.title, body: n.body, href: n.href, ago: agoLabel(n.createdAt, now), unread: !n.readAt }));
   const b = d.balances;
   const campaignCount = of("campaigns").length;
 
   const fallback = d.counts.action > 0 || campaignCount === 0 ? "action" : "campaigns";
   const views: ViewDef[] = [
-    { id: "action", label: "Needs you", icon: "zap", tint: "bg-amber-100 text-amber-700", value: String(d.counts.action), caption: d.counts.action ? "Reviews, approvals, disputes" : "All caught up" },
-    { id: "campaigns", label: "Live campaigns", icon: "megaphone", tint: "bg-indigo-100 text-indigo-700", value: String(d.counts.live), caption: `${campaignCount} in total` },
-    { id: "applicants", label: "New applicants", icon: "users", tint: "bg-sky-100 text-sky-700", value: String(d.counts.newApplicants), caption: "Waiting for a decision" },
-    { id: "spend", label: "Paid to creators", icon: "wallet", tint: "bg-lime-100 text-lime-700", value: formatINR(b.creator_paid), caption: `${formatINR(b.campaign_funds)} held in escrow` },
+    { id: "action", label: "Needs you", icon: "zap", tint: "bg-warn-50 text-warn", value: String(d.counts.action), caption: d.counts.action ? "Reviews, approvals, disputes" : "All caught up" },
+    { id: "campaigns", label: "Live campaigns", icon: "megaphone", tint: "bg-stamp-soft text-stamp", value: String(d.counts.live), caption: `${campaignCount} in total` },
+    { id: "applicants", label: "New applicants", icon: "users", tint: "bg-info-50 text-info", value: String(d.counts.newApplicants), caption: "Waiting for a decision" },
+    // Amounts live in the Money summary; this tab counts ledger movements so no figure repeats.
+    { id: "spend", label: "Money movements", icon: "wallet", tint: "", value: String(of("spend").length), caption: "From the double-entry ledger" },
   ];
   const initialView = pickView(sp.view, views.map((v) => v.id), fallback);
   const chipFor = (v: string) => (v === initialView ? sp.chip : undefined);
   const newCampaign = (
-    <Link href="/brand/campaigns/new" className={limePill}>
+    <Link href="/brand/campaigns/new" className={stampPill}>
       <Plus size={16} aria-hidden /> New campaign
     </Link>
   );
@@ -46,6 +49,7 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
         question="Content to review, earnings to approve or pay, and disputes to answer."
         chips={[{ id: "all", label: "All" }, { id: "review", label: "Content review" }, { id: "money", label: "Approve & pay" }, { id: "disputes", label: "Disputes" }]}
         rows={of("action")}
+        beamFirst
         initialChip={chipFor("action")}
         emptyTitle="You're all caught up"
         emptyBody="No content, settlements or disputes are waiting on you."
@@ -97,9 +101,9 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
       <div className="space-y-6 sm:space-y-8">
         <DashHeader
           name={actor.name}
-          accent="#4f46e5"
           greeting={greetingFor()}
-          title={`${org?.displayName ?? "Brand"} overview`}
+          title={org?.displayName ?? "Overview"}
+          subtitle={d.counts.action ? `${d.counts.action} ${d.counts.action === 1 ? "thing needs" : "things need"} your decision today.` : "Nothing is waiting on you."}
           search={{ action: "/brand/creators", placeholder: "Search creators by niche, city, language", filtersHref: "/brand/creators" }}
           actions={newCampaign}
         />
@@ -109,12 +113,17 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
           </div>
           <aside className="space-y-6">
             {d.continueCard && <ContinueBlock data={d.continueCard} />}
-            <MoneyCta
-              amountLabel={`${formatINR(b.campaign_funds)} in escrow`}
-              sub={`${formatINR(b.creator_payable)} approved, awaiting payout`}
+            <MoneySummary
+              rows={[
+                { label: "Held in escrow", minor: b.campaign_funds, hint: "Funded, not yet earned" },
+                { label: "Approved, awaiting payout", minor: b.creator_payable },
+                ...(b.dispute_hold ? [{ label: "Held for disputes", minor: b.dispute_hold }] : []),
+                { label: "Paid to creators", minor: b.creator_paid, strong: true },
+              ]}
               href="/brand/billing"
-              cta="Billing & ledger"
+              cta="Open billing & ledger"
             />
+            <ActivityFeed items={activity} />
             <SideCard title="Top creators" href="/brand/creators" linkLabel="Discover">
               {d.topCreators.length === 0 ? (
                 <p className="px-1 text-sm text-muted">Creators with a verified track record appear here.</p>
@@ -137,22 +146,17 @@ export default async function BrandHome({ searchParams }: { searchParams: Promis
                       <Fact label="Rate" value={c.rate} />
                     </div>
                     {c.verifiedId && (
-                      <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                      <p className="mt-4 flex items-center gap-2 text-sm font-semibold text-good">
                         <BadgeCheck size={16} aria-hidden /> Identity verified by proovd
                       </p>
                     )}
                     <Link href={`/creators/${c.id}`} className={cx(darkPill, "mt-5 w-full")}>
-                      View profile & invite <ArrowUpRight size={16} className="text-lime" aria-hidden />
+                      View profile & invite
                     </Link>
                   </QuickSheet>
                 ))
               )}
             </SideCard>
-            <section className={cx(glass, "p-5")}>
-              <div className="font-bold text-ink">Committed to creators</div>
-              <div className="mt-1 text-2xl font-extrabold tabular-nums tracking-[-0.02em] text-ink">{formatINR(b.creator_payable + b.dispute_hold + b.creator_paid)}</div>
-              <p className="mt-1 text-sm text-muted">Paid, approved or held. Every rupee is traceable to a verified event or approved deliverable.</p>
-            </section>
           </aside>
         </div>
       </div>

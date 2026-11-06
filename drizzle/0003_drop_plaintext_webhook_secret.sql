@@ -1,0 +1,1 @@
+ALTER TABLE "organizations" DROP COLUMN "webhook_secret";

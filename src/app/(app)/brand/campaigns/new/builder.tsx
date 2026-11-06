@@ -76,8 +76,8 @@ export function CampaignBuilder() {
           {STEPS.map((s, i) => (
             <li key={s}>
               <button type="button" onClick={() => setStep(i)} aria-current={step === i ? "step" : undefined}
-                className={cx("flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm", step === i ? "bg-white font-medium text-ink shadow-sm ring-1 ring-line" : "text-muted hover:text-ink")}>
-                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-[#e3e7ef] text-slate-600")}>{i < step ? "✓" : i + 1}</span>
+                className={cx("flex w-full items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm", step === i ? "bg-white font-medium text-ink ring-1 ring-line" : "text-muted hover:text-ink")}>
+                <span className={cx("tnum grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold", i < step ? "bg-good text-white" : step === i ? "bg-accent text-white" : "bg-black/10 text-slate-600")}>{i < step ? "✓" : i + 1}</span>
                 {s}
               </button>
             </li>
@@ -112,7 +112,7 @@ export function CampaignBuilder() {
               <legend className="mb-2 text-sm font-medium text-ink-2">Channels</legend>
               <div className="flex flex-wrap gap-2">
                 {CHANNELS.map((c) => (
-                  <label key={c} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                  <label key={c} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-surface px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                     <input type="checkbox" name="channels" value={c} defaultChecked={c === "Instagram"} /> {c}
                   </label>
                 ))}
@@ -134,7 +134,7 @@ export function CampaignBuilder() {
             <legend className="mb-2 text-sm font-medium text-ink-2">Content languages</legend>
             <div className="flex flex-wrap gap-2">
               {LANGS.map((l) => (
-                <label key={l} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-white/60 px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
+                <label key={l} className="inline-flex items-center gap-2 rounded-full border border-black/[0.07] bg-surface px-3.5 py-1.5 text-sm has-[:checked]:border-accent has-[:checked]:bg-accent-50">
                   <input type="checkbox" name="languages" value={l} defaultChecked={l === "English" || l === "Hindi"} /> {l}
                 </label>
               ))}

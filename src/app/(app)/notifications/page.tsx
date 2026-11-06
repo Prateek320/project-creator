@@ -21,7 +21,7 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
           <ul className="divide-y divide-line-2">
             {rows.map((n) => (
               <li key={n.id}>
-                <Link href={n.href ?? "#"} className="flex items-start gap-3 px-6 py-4 transition-colors hover:bg-white/60">
+                <Link href={n.href ?? "#"} className="flex items-start gap-3 px-6 py-4 transition-colors hover:bg-sunken">
                   <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.readAt ? "bg-transparent" : "bg-accent"}`} />
                   <div className="min-w-0 flex-1"><div className="text-sm font-medium">{n.title}{!n.readAt && <span className="sr-only"> (unread)</span>}</div><div className="truncate text-sm text-muted">{n.body}</div></div>
                   <span className="shrink-0 text-xs text-muted">{fmtDateTime(n.createdAt)}</span>

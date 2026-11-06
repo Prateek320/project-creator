@@ -1,57 +1,68 @@
 @import "tailwindcss";
 
+/* Dark mode is driven by data-theme on <html> (set before paint by ThemeScript). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
- * Design tokens. Principles (learnui.design "7 rules"):
- *  - Light comes from above: raised surfaces are lighter with a soft shadow below; inputs are sunken.
- *  - Grayscale first, one accent hue: every gray is a slightly blue-saturated slate, never pure gray.
- *  - Accent = one indigo hue at several brightness/saturation steps.
+ * Design tokens — "carbon copy & rubber stamp".
+ * proovd sells proof, so the interface borrows from Indian office paperwork: plain paper, carbon
+ * ink, and the violet rubber stamp that marks a document as checked.
+ *  - Paper and sheet: flat, cool, no gradients or blur. Hierarchy comes from rules and type.
+ *  - One accent: stamp violet. It marks verification and the single most important action.
+ *  - Money has its own voice: Archivo semi-condensed with tabular figures (`.figures`).
  */
 @theme {
   --font-sans: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-figures: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-creator: var(--font-sans);
 
-  --color-canvas: #f3f5f9;
+  --color-canvas: #f3f4f6;
   --color-surface: #ffffff;
-  --color-sunken: rgba(255, 255, 255, 0.55);
-  --color-ink: #0f1222;
-  --color-lime: #e3f25c;
-  --color-lime-soft: #f3f9c4;
-  --color-ink-2: #2f3a55;
-  --color-muted: #66708a;
-  --color-faint: #96a0b5;
-  --color-line: rgba(15, 18, 34, 0.09);
-  --color-line-2: rgba(15, 18, 34, 0.06);
+  --color-sunken: #f7f8fa;
+  --color-ink: #181b2c;
+  --color-ink-2: #33384d;
+  --color-muted: #5b6075;
+  --color-faint: #8b90a3;
+  --color-line: #dadde4;
+  --color-line-2: #e8eaef;
 
-  --color-accent: #4f46e5;
-  --color-accent-400: #6d68f7;
-  --color-accent-600: #4038c9;
-  --color-accent-700: #352ea8;
-  --color-accent-50: #f0f1ff;
-  --color-accent-100: #e2e3ff;
-  --color-accent-200: #c9caff;
+  /* Stamp violet: the only accent. */
+  --color-stamp: #5e2b8c;
+  --color-stamp-600: #4f2277;
+  --color-stamp-400: #7b48ab;
+  --color-stamp-soft: #f1eaf8;
+  --color-stamp-line: #d9c7ea;
+  --color-accent: var(--color-stamp);
+  --color-accent-400: var(--color-stamp-400);
+  --color-accent-600: var(--color-stamp-600);
+  --color-accent-700: #43206a;
+  --color-accent-50: #f7f2fb;
+  --color-accent-100: var(--color-stamp-soft);
+  --color-accent-200: var(--color-stamp-line);
 
-  --color-good: #047857;
-  --color-good-50: #ecfdf5;
-  --color-warn: #b45309;
-  --color-warn-50: #fffbeb;
-  --color-bad: #c02626;
-  --color-bad-50: #fef2f2;
-  --color-info: #0369a1;
-  --color-info-50: #f0f9ff;
+  --color-good: #0f6e4a;
+  --color-good-50: #e8f4ee;
+  --color-warn: #965407;
+  --color-warn-50: #fbf2e3;
+  --color-bad: #b02a22;
+  --color-bad-50: #fbecea;
+  --color-info: #23557f;
+  --color-info-50: #eaf1f7;
 
-  --font-creator: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --radius-card: 16px;
+  --radius-card: 14px;
 
-  /* Raised: lighter top edge (inner highlight) + soft, slightly offset shadow below. */
-  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(14, 22, 48, 0.05), 0 2px 8px -2px rgba(14, 22, 48, 0.06);
-  --shadow-card-hover: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 4px rgba(14, 22, 48, 0.05), 0 10px 24px -8px rgba(14, 22, 48, 0.14);
-  --shadow-pop: 0 4px 8px -2px rgba(14, 22, 48, 0.08), 0 16px 32px -8px rgba(14, 22, 48, 0.18);
-  /* Sunken: inner shadow at the top edge. */
-  --shadow-inset: inset 0 1px 2px rgba(14, 22, 48, 0.06);
+  --shadow-card: 0 1px 0 rgba(24, 27, 44, 0.04);
+  --shadow-card-hover: 0 1px 0 rgba(24, 27, 44, 0.04), 0 6px 18px -10px rgba(24, 27, 44, 0.22);
+  --shadow-pop: 0 2px 6px -2px rgba(24, 27, 44, 0.12), 0 18px 40px -12px rgba(24, 27, 44, 0.28);
+  --shadow-inset: inset 0 1px 2px rgba(24, 27, 44, 0.05);
 
   --animate-rise: rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-fade: fade 180ms ease-out both;
   --animate-pop-in: pop-in 160ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-grow: grow 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-toast-in: toast-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-row-new: row-new 2400ms ease-out both;
+  --animate-dot: dot 1.2s ease-in-out infinite;
 }
 
 @keyframes rise {
@@ -71,10 +82,240 @@
   to { transform: scaleX(1); }
 }
 
+
+/* ---------- Dark theme ----------
+ * Carbon paper: a blue-black sheet, light ink, and the stamp violet lifted so it reads on dark.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-white: #1c1e29;
+  --color-black: #ffffff;
+  --color-canvas: #121420;
+  --color-surface: #1c1e29;
+  --color-sunken: #171925;
+  --color-ink: #eceef4;
+  --color-ink-2: #c9ccd8;
+  --color-muted: #9599ab;
+  --color-faint: #6c7084;
+  --color-line: rgba(255, 255, 255, 0.12);
+  --color-line-2: rgba(255, 255, 255, 0.07);
+  --color-stamp: #c3a0e6;
+  --color-stamp-600: #d6bdf0;
+  --color-stamp-400: #a77fd1;
+  --color-stamp-soft: rgba(195, 160, 230, 0.12);
+  --color-stamp-line: rgba(195, 160, 230, 0.32);
+  --color-accent: var(--color-stamp);
+  --color-accent-400: #d6bdf0;
+  --color-accent-600: #b48cdc;
+  --color-accent-700: #a77fd1;
+  --color-accent-50: rgba(195, 160, 230, 0.07);
+  --color-accent-100: rgba(195, 160, 230, 0.14);
+  --color-accent-200: rgba(195, 160, 230, 0.28);
+  --color-good: #7fd3ab;
+  --color-good-50: rgba(127, 211, 171, 0.12);
+  --color-warn: #f0c070;
+  --color-warn-50: rgba(240, 192, 112, 0.12);
+  --color-info: #93bfe6;
+  --color-info-50: rgba(147, 191, 230, 0.12);
+  --color-bad: #f2a29b;
+  --color-bad-50: rgba(242, 162, 155, 0.12);
+  --color-green-50: rgba(34,197,94, 0.06);
+  --color-green-100: rgba(34,197,94, 0.14);
+  --color-green-200: rgba(34,197,94, 0.22);
+  --color-green-300: rgba(34,197,94, 0.32);
+  --color-green-400: #4ade80;
+  --color-green-500: #4ade80;
+  --color-green-600: #86efac;
+  --color-green-700: #86efac;
+  --color-green-800: #bbf7d0;
+  --color-green-900: #bbf7d0;
+  --color-emerald-50: rgba(16,185,129, 0.06);
+  --color-emerald-100: rgba(16,185,129, 0.14);
+  --color-emerald-200: rgba(16,185,129, 0.22);
+  --color-emerald-300: rgba(16,185,129, 0.32);
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #34d399;
+  --color-emerald-600: #6ee7b7;
+  --color-emerald-700: #6ee7b7;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-900: #a7f3d0;
+  --color-teal-50: rgba(20,184,166, 0.06);
+  --color-teal-100: rgba(20,184,166, 0.14);
+  --color-teal-200: rgba(20,184,166, 0.22);
+  --color-teal-300: rgba(20,184,166, 0.32);
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #2dd4bf;
+  --color-teal-600: #5eead4;
+  --color-teal-700: #5eead4;
+  --color-teal-800: #99f6e4;
+  --color-teal-900: #99f6e4;
+  --color-lime-50: rgba(163,230,53, 0.06);
+  --color-lime-100: rgba(163,230,53, 0.14);
+  --color-lime-200: rgba(163,230,53, 0.22);
+  --color-lime-300: rgba(163,230,53, 0.32);
+  --color-lime-400: #bef264;
+  --color-lime-500: #bef264;
+  --color-lime-600: #d9f99d;
+  --color-lime-700: #d9f99d;
+  --color-lime-800: #ecfccb;
+  --color-lime-900: #ecfccb;
+  --color-amber-50: rgba(245,158,11, 0.06);
+  --color-amber-100: rgba(245,158,11, 0.14);
+  --color-amber-200: rgba(245,158,11, 0.22);
+  --color-amber-300: rgba(245,158,11, 0.32);
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #fbbf24;
+  --color-amber-600: #fcd34d;
+  --color-amber-700: #fcd34d;
+  --color-amber-800: #fde68a;
+  --color-amber-900: #fde68a;
+  --color-yellow-50: rgba(234,179,8, 0.06);
+  --color-yellow-100: rgba(234,179,8, 0.14);
+  --color-yellow-200: rgba(234,179,8, 0.22);
+  --color-yellow-300: rgba(234,179,8, 0.32);
+  --color-yellow-400: #facc15;
+  --color-yellow-500: #facc15;
+  --color-yellow-600: #fde047;
+  --color-yellow-700: #fde047;
+  --color-yellow-800: #fef08a;
+  --color-yellow-900: #fef08a;
+  --color-orange-50: rgba(249,115,22, 0.06);
+  --color-orange-100: rgba(249,115,22, 0.14);
+  --color-orange-200: rgba(249,115,22, 0.22);
+  --color-orange-300: rgba(249,115,22, 0.32);
+  --color-orange-400: #fb923c;
+  --color-orange-500: #fb923c;
+  --color-orange-600: #fdba74;
+  --color-orange-700: #fdba74;
+  --color-orange-800: #fed7aa;
+  --color-orange-900: #fed7aa;
+  --color-sky-50: rgba(14,165,233, 0.06);
+  --color-sky-100: rgba(14,165,233, 0.14);
+  --color-sky-200: rgba(14,165,233, 0.22);
+  --color-sky-300: rgba(14,165,233, 0.32);
+  --color-sky-400: #38bdf8;
+  --color-sky-500: #38bdf8;
+  --color-sky-600: #7dd3fc;
+  --color-sky-700: #7dd3fc;
+  --color-sky-800: #bae6fd;
+  --color-sky-900: #bae6fd;
+  --color-blue-50: rgba(59,130,246, 0.06);
+  --color-blue-100: rgba(59,130,246, 0.14);
+  --color-blue-200: rgba(59,130,246, 0.22);
+  --color-blue-300: rgba(59,130,246, 0.32);
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #60a5fa;
+  --color-blue-600: #93c5fd;
+  --color-blue-700: #93c5fd;
+  --color-blue-800: #bfdbfe;
+  --color-blue-900: #bfdbfe;
+  --color-cyan-50: rgba(6,182,212, 0.06);
+  --color-cyan-100: rgba(6,182,212, 0.14);
+  --color-cyan-200: rgba(6,182,212, 0.22);
+  --color-cyan-300: rgba(6,182,212, 0.32);
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #22d3ee;
+  --color-cyan-600: #67e8f9;
+  --color-cyan-700: #67e8f9;
+  --color-cyan-800: #a5f3fc;
+  --color-cyan-900: #a5f3fc;
+  --color-indigo-50: rgba(99,102,241, 0.06);
+  --color-indigo-100: rgba(99,102,241, 0.14);
+  --color-indigo-200: rgba(99,102,241, 0.22);
+  --color-indigo-300: rgba(99,102,241, 0.32);
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #818cf8;
+  --color-indigo-600: #a5b4fc;
+  --color-indigo-700: #a5b4fc;
+  --color-indigo-800: #c7d2fe;
+  --color-indigo-900: #c7d2fe;
+  --color-violet-50: rgba(139,92,246, 0.06);
+  --color-violet-100: rgba(139,92,246, 0.14);
+  --color-violet-200: rgba(139,92,246, 0.22);
+  --color-violet-300: rgba(139,92,246, 0.32);
+  --color-violet-400: #a78bfa;
+  --color-violet-500: #a78bfa;
+  --color-violet-600: #c4b5fd;
+  --color-violet-700: #c4b5fd;
+  --color-violet-800: #ddd6fe;
+  --color-violet-900: #ddd6fe;
+  --color-purple-50: rgba(168,85,247, 0.06);
+  --color-purple-100: rgba(168,85,247, 0.14);
+  --color-purple-200: rgba(168,85,247, 0.22);
+  --color-purple-300: rgba(168,85,247, 0.32);
+  --color-purple-400: #c084fc;
+  --color-purple-500: #c084fc;
+  --color-purple-600: #d8b4fe;
+  --color-purple-700: #d8b4fe;
+  --color-purple-800: #e9d5ff;
+  --color-purple-900: #e9d5ff;
+  --color-fuchsia-50: rgba(217,70,239, 0.06);
+  --color-fuchsia-100: rgba(217,70,239, 0.14);
+  --color-fuchsia-200: rgba(217,70,239, 0.22);
+  --color-fuchsia-300: rgba(217,70,239, 0.32);
+  --color-fuchsia-400: #e879f9;
+  --color-fuchsia-500: #e879f9;
+  --color-fuchsia-600: #f0abfc;
+  --color-fuchsia-700: #f0abfc;
+  --color-fuchsia-800: #f5d0fe;
+  --color-fuchsia-900: #f5d0fe;
+  --color-pink-50: rgba(236,72,153, 0.06);
+  --color-pink-100: rgba(236,72,153, 0.14);
+  --color-pink-200: rgba(236,72,153, 0.22);
+  --color-pink-300: rgba(236,72,153, 0.32);
+  --color-pink-400: #f472b6;
+  --color-pink-500: #f472b6;
+  --color-pink-600: #f9a8d4;
+  --color-pink-700: #f9a8d4;
+  --color-pink-800: #fbcfe8;
+  --color-pink-900: #fbcfe8;
+  --color-rose-50: rgba(244,63,94, 0.06);
+  --color-rose-100: rgba(244,63,94, 0.14);
+  --color-rose-200: rgba(244,63,94, 0.22);
+  --color-rose-300: rgba(244,63,94, 0.32);
+  --color-rose-400: #fb7185;
+  --color-rose-500: #fb7185;
+  --color-rose-600: #fda4af;
+  --color-rose-700: #fda4af;
+  --color-rose-800: #fecdd3;
+  --color-rose-900: #fecdd3;
+  --color-red-50: rgba(239,68,68, 0.06);
+  --color-red-100: rgba(239,68,68, 0.14);
+  --color-red-200: rgba(239,68,68, 0.22);
+  --color-red-300: rgba(239,68,68, 0.32);
+  --color-red-400: #f87171;
+  --color-red-500: #f87171;
+  --color-red-600: #fca5a5;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-red-900: #fecaca;
+  --color-slate-50: rgba(148,163,184, 0.06);
+  --color-slate-100: rgba(148,163,184, 0.14);
+  --color-slate-200: rgba(148,163,184, 0.22);
+  --color-slate-300: rgba(148,163,184, 0.32);
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #cbd5e1;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #e2e8f0;
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-card-hover: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 12px 32px -12px rgba(0, 0, 0, 0.7);
+  --shadow-pop: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 48px -12px rgba(0, 0, 0, 0.8);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --logo-arrow-edge: #121420;
+}
+[data-theme="dark"] body { background: var(--color-canvas); }
+[data-theme="dark"] .bg-stamp { color: #1c1e29; }
+[data-theme="dark"] .bg-ink:not(.dk-raise) { color: #121420; }
+[data-theme="dark"] [class*="border-white/"] { border-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] :focus-visible { outline-color: var(--color-stamp); }
+[data-theme="dark"] ::selection { background: var(--color-stamp); color: #121420; }
+
 html { -webkit-text-size-adjust: 100%; }
 body {
-  /* Warm-glass canvas shared by every workspace. */
-  background: linear-gradient(135deg, #dcfce7 0%, #fffbeb 50%, #dbeafe 100%) var(--color-canvas);
+  /* Flat paper. Surfaces sit on it as sheets; no gradients, no blur. */
+  background: var(--color-canvas);
   min-height: 100dvh;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
@@ -84,24 +325,70 @@ body {
 h1, h2, h3 { letter-spacing: -0.015em; }
 .tnum { font-variant-numeric: tabular-nums; }
 
-/* Small, uppercase, tracked label: pops by case and spacing, un-pops by size and color. */
+/* Money and counts: Archivo semi-condensed, tabular, lining figures. */
+.figures {
+  font-family: var(--font-figures);
+  font-stretch: 88%;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Field label: sentence case, small and muted. No caps, no tracking. */
 .eyebrow {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 600;
   color: var(--color-muted);
 }
 
-:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 8px; }
-::selection { background: var(--color-lime); color: var(--color-ink); }
+/* ---------- Receipt ----------
+ * A settlement is a document. The sheet has perforated top and bottom edges, dashed rules between
+ * sections, and a rubber stamp once it has been checked.
+ */
+.receipt {
+  position: relative;
+  background: var(--color-surface);
+  --perf: radial-gradient(circle at 6px 0, transparent 5px, #000 5.5px);
+  -webkit-mask: var(--perf) top / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) bottom / 12px 51% repeat-x;
+  mask: var(--perf) top / 12px 51% repeat-x, radial-gradient(circle at 6px 100%, transparent 5px, #000 5.5px) bottom / 12px 51% repeat-x;
+  filter: drop-shadow(0 1px 1px rgba(24, 27, 44, 0.06)) drop-shadow(0 8px 18px rgba(24, 27, 44, 0.06));
+}
+.rule-dash { border-top: 1.5px dashed var(--color-line); }
 
-/* Page entrance: sections rise in with a short stagger. */
-.page-enter > * { animation: var(--animate-rise); }
-.page-enter > *:nth-child(2) { animation-delay: 40ms; }
-.page-enter > *:nth-child(3) { animation-delay: 80ms; }
-.page-enter > *:nth-child(4) { animation-delay: 120ms; }
-.page-enter > *:nth-child(n + 5) { animation-delay: 160ms; }
+/* Rubber stamp: double ruled border, slight tilt, ink that doesn't quite cover. */
+.stamp {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 16px 6px;
+  border: 3px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 6px;
+  color: var(--color-stamp);
+  font-family: var(--font-figures);
+  font-stretch: 80%;
+  font-weight: 800;
+  line-height: 1;
+  transform: rotate(-6deg);
+  opacity: 0.88;
+  mix-blend-mode: multiply;
+  -webkit-mask: radial-gradient(circle at 30% 40%, #000 55%, rgba(0, 0, 0, 0.78) 70%, #000 85%);
+  mask: radial-gradient(circle at 30% 40%, #000 55%, rgba(0, 0, 0, 0.78) 70%, #000 85%);
+}
+[data-theme="dark"] .stamp { mix-blend-mode: normal; }
+@keyframes stamp-in {
+  0% { opacity: 0; transform: rotate(-6deg) scale(1.6); }
+  60% { opacity: 0.95; transform: rotate(-6deg) scale(0.96); }
+  100% { opacity: 0.88; transform: rotate(-6deg) scale(1); }
+}
+.stamp-in { animation: stamp-in 420ms cubic-bezier(0.3, 0.7, 0.3, 1) 300ms both; }
+
+:focus-visible { outline: 2px solid var(--color-stamp); outline-offset: 2px; border-radius: 8px; }
+::selection { background: var(--color-stamp-soft); color: var(--color-ink); }
+
+/* Page entrance: one quiet fade for the whole page, not a per-section cascade. */
+.page-enter { animation: var(--animate-fade); }
 
 /* Popovers built on <details> open with a short pop. */
 details[open] > :not(summary) { animation: var(--animate-pop-in); }
@@ -116,6 +403,41 @@ input[type="range"] { accent-color: var(--color-ink); }
 input[type="checkbox"], input[type="radio"] { accent-color: var(--color-ink); }
 input[type="file"]::file-selector-button { cursor: pointer; }
 
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+/* New evidence rows: slide in and briefly glow. */
+@keyframes row-new {
+  0% { opacity: 0; transform: translateX(-6px); background-color: var(--color-stamp-soft); }
+  15% { opacity: 1; transform: none; }
+  100% { background-color: transparent; }
+}
+@keyframes dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+@keyframes check-draw { to { stroke-dashoffset: 0; } }
+@keyframes beam-spin { to { --beam-angle: 360deg; } }
+@property --beam-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+/* The single most urgent row: a stamp-violet edge. Static; urgency shouldn't need motion. */
+.beam { position: relative; box-shadow: inset 3px 0 0 var(--color-stamp); }
+.typing-dots > span { display: inline-block; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; animation: var(--animate-dot); }
+.typing-dots > span:nth-child(2) { animation-delay: 150ms; }
+.typing-dots > span:nth-child(3) { animation-delay: 300ms; }
+.check-draw { stroke-dasharray: 48; stroke-dashoffset: 48; animation: check-draw 520ms 180ms cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+.row-new > * { animation: var(--animate-row-new); animation-delay: var(--row-delay, 0ms); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
+  .check-draw { stroke-dashoffset: 0; }
+}
+
+/* Chart bars rise from the baseline, left to right. */
+@keyframes bar-grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-grow { transform-box: fill-box; transform-origin: bottom; animation: bar-grow 600ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .bar-grow { animation: none !important; transform: none; }
 }

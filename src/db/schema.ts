@@ -103,8 +103,13 @@ export const organizations = pgTable("organizations", {
   category: text("category").notNull().default("D2C"),
   website: text("website"),
   verificationState: verificationState("verification_state").notNull().default("unverified"),
-  /** Demo-only HMAC secret for the brand conversion webhook. In production keep in a secrets manager. */
-  webhookSecret: text("webhook_secret").notNull(),
+  /**
+   * HMAC signing secret for the brand conversion webhook, AES-256-GCM encrypted (src/server/crypto.ts).
+   * Null until the brand generates one. The previous secret stays valid for 24 h after a rotation.
+   */
+  webhookSecretEnc: text("webhook_secret_enc"),
+  webhookSecretPrevEnc: text("webhook_secret_prev_enc"),
+  webhookSecretRotatedAt: timestamp("webhook_secret_rotated_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
 
@@ -373,7 +378,8 @@ export const ledgerEntries = pgTable(
 export const paymentTransfers = pgTable("payment_transfers", {
   id: id(),
   provider: text("provider").notNull(),
-  providerRef: text("provider_ref").notNull().unique(),
+  /** Null while the transfer is pending: the provider is called from a job after this row is committed. */
+  providerRef: text("provider_ref").unique(),
   idempotencyKey: text("idempotency_key").notNull().unique(),
   ledgerTransactionGroupId: uuid("ledger_transaction_group_id").notNull(),
   agreementId: uuid("agreement_id").notNull().references(() => agreements.id),
@@ -437,3 +443,37 @@ export const notifications = pgTable(
   (t) => [index("notification_user_idx").on(t.userId, t.createdAt)],
 );
 
+
+// ---------- infrastructure ----------
+export const jobStatus = pgEnum("job_status", ["queued", "running", "done", "dead"]);
+
+/**
+ * Durable job queue and outbox. Anything that calls another system is enqueued here inside the
+ * same transaction as the state change that needs it, then run by the worker (src/server/jobs.ts).
+ */
+export const jobs = pgTable(
+  "jobs",
+  {
+    id: id(),
+    kind: text("kind").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+    idempotencyKey: text("idempotency_key").notNull().unique(),
+    status: jobStatus("status").notNull().default("queued"),
+    runAt: timestamp("run_at", { withTimezone: true }).notNull().defaultNow(),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(8),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: text("locked_by"),
+    lastError: text("last_error"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("jobs_due_idx").on(t.status, t.runAt)],
+);
+
+/** Fixed-window rate limit counters, shared by every server instance. */
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+  count: integer("count").notNull().default(0),
+});
